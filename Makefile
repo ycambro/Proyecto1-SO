@@ -1,20 +1,27 @@
 CC = gcc
-CFLAGS = -Wall -g
-OBJS = mypthread.o scheduler.o scheduler_test.o
+CFLAGS = -Wall -Wextra -g
+LDFLAGS = -lpthread
+OBJS = mypthreads.o scheduler.o prueba.o
+TARGET = prueba
 
-all: scheduler_test
+all: $(TARGET)
 
-mypthread.o: mypthread.c mypthread.h
-	$(CC) $(CFLAGS) -c mypthread.c
+mypthreads.o: mypthreads.c mypthreads.h scheduler.h
+	$(CC) $(CFLAGS) -c mypthreads.c
 
-scheduler.o: scheduler.c mypthread.h
+scheduler.o: scheduler.c scheduler.h mypthreads.h
 	$(CC) $(CFLAGS) -c scheduler.c
 
-scheduler_test.o: scheduler_test.c mypthread.h
-	$(CC) $(CFLAGS) -c scheduler_test.c
+prueba.o: prueba.c mypthreads.h scheduler.h
+	$(CC) $(CFLAGS) -c prueba.c
 
-scheduler_test: $(OBJS)
-	$(CC) $(CFLAGS) -o scheduler_test $(OBJS)
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
 
 clean:
-	rm -f *.o scheduler_test
+	rm -f $(OBJS) $(TARGET)
+
+run: $(TARGET)
+	./$(TARGET)
+
+.PHONY: all clean run

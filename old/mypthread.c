@@ -12,9 +12,6 @@ my_thread *current_thread = NULL;
 my_thread *thread_queue = NULL;
 sched_type current_sched = SCHED_RR;
 int next_id = 1;
-static my_thread *current_thread = NULL;
-static my_thread *thread_queue = NULL;
-static int next_id = 1;
 
 int my_thread_create(int *thread_id, void (*start_routine)(void *), void *arg, 
                     sched_type type, int priority, int tickets) {
