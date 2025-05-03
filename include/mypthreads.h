@@ -1,0 +1,41 @@
+#ifndef MYPTHREADS_H
+#define MYPTHREADS_H
+
+#include <ucontext.h>
+
+typedef enum {
+    SCHED_RR,
+    SCHED_LOTTERY,
+    SCHED_REALTIME
+} scheduler_t;
+
+typedef enum {
+    READY,
+    RUNNING,
+    BLOCKED,
+    FINISHED
+} thread_state_t;
+
+typedef struct my_thread {
+    ucontext_t context;
+    int id;
+    thread_state_t state;
+    void *retval;
+    scheduler_t sched_type;
+    int lottery_tickets;
+    struct my_thread *next;
+} my_thread_t;
+
+typedef struct {
+    int locked;
+    my_thread_t *owner;
+} my_mutex_t;
+
+int my_thread_create(my_thread_t **thread, void (*start_routine)(void *), void *arg, scheduler_t sched_type, int param);
+void my_thread_end(void *retval);
+void my_thread_yield(void);
+int my_thread_join(my_thread_t *thread, void **retval);
+int my_thread_detach(my_thread_t *thread);
+int my_thread_chsched(my_thread_t *thread, scheduler_t new_sched);
+
+#endif
