@@ -13,9 +13,23 @@ EXEC_test_lottery        = $(TEST_DIR)/test_lottery.c        $(PTHREADS_SRC) $(S
 EXEC_test_lottery_bias   = $(TEST_DIR)/test_lottery_bias.c   $(PTHREADS_SRC) $(SRC_DIR)/schedulers/lottery.c
 EXEC_test_realtime       = $(TEST_DIR)/test_realtime.c       $(PTHREADS_SRC) $(SRC_DIR)/schedulers/realtime.c
 
+# Servidor y cliente
+SERVER_SRC = $(SRC_DIR)/animacion/server.c
+MONITOR_SRC = $(SRC_DIR)/animacion/monitor.c
+SERVER_BIN = server
+MONITOR_BIN = monitor 
+
 # Compilador
 CC = gcc
 CFLAGS = -Wall -g
+
+# Servidor
+$(SERVER_BIN): $(SERVER_SRC) $(PTHREADS_SRC) $(RR_SCHEDULER)
+	$(CC) -o $@ $^ $(INCLUDE_DIR)
+
+# Monitor
+$(MONITOR_BIN): $(MONITOR_SRC)
+	$(CC) -o $@ $^ -lncurses
 
 # Regla por defecto
 all: $(TESTS)
@@ -41,6 +55,13 @@ run_lottery: test_lottery
 run_realtime: test_realtime
 	./test_realtime
 
-# Limpiar binarios
+
+run_server: $(SERVER_BIN)
+	./$(SERVER_BIN)
+
+run_monitor: $(MONITOR_BIN)
+	./$(MONITOR_BIN)
+
+# Limpiar
 clean:
-	rm -f $(TESTS)
+	rm -f $(ANIM_LOCAL_BIN) $(SERVER_BIN) $(MONITOR_BIN) $(TESTS)
