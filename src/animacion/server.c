@@ -40,7 +40,7 @@ void animar_objeto(void *arg) {
         }
         my_mutex_unlock(&monitores_mutex);
 
-        printf("[server] Enviado: %s", mensaje);
+        //printf("[server] Enviado: %s", mensaje);
 
         x += dir;
         if (x >= cfg->x_final || x <= cfg->x_inicial) dir *= -1;

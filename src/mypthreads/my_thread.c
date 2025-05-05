@@ -6,11 +6,21 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <sys/time.h>
+#include <stdint.h>
+#include <config_parser.h>
+
 #define STACK_SIZE 64 * 1024
 
 extern ucontext_t main_context;
 
 static int thread_counter = 0;
+
+uint64_t get_current_time() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (uint64_t)(tv.tv_sec) * 1000 + (uint64_t)(tv.tv_usec) / 1000;
+}
 
 int my_thread_create(my_thread_t **thread, void (*start_routine)(void *), void *arg, scheduler_t sched_type, int param) {
     *thread = malloc(sizeof(my_thread_t));
@@ -36,7 +46,11 @@ int my_thread_create(my_thread_t **thread, void (*start_routine)(void *), void *
     if (sched_type == SCHED_LOTTERY)
         (*thread)->lottery_tickets = param > 0 ? param : 1;
     else if (sched_type == SCHED_REALTIME)
-        (*thread)->priority = param > 0 ? param : 10;
+        (*thread)->priority = param; // Asumimos que get_current_time() devuelve el tiempo actual en ms
+        ObjetoConfig *cfg = (ObjetoConfig *)arg;
+        (*thread)->deadline = 0; // No se usa en RR
+        (*thread)->inicio_ejecucion = cfg->inicio;
+        (*thread)->tiempo_ejecucion = cfg->fin;
 
     scheduler_add(*thread);
     return 0;

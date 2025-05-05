@@ -27,6 +27,11 @@ typedef struct my_thread {
     int detached;   
     int joined;     
     struct my_thread *next;
+
+    // Tiempo real
+    int deadline;          // Menor deadline = más urgente
+    int tiempo_ejecucion;    // Tiempo estimado para completar
+    int inicio_ejecucion;    // Para seguimiento durante ejecución
 } my_thread_t;
 
 

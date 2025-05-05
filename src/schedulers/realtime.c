@@ -3,20 +3,24 @@
 #include <stdlib.h>
 #include <ucontext.h>
 
-my_thread_t *current_thread = NULL;
-static my_thread_t *priority_queue = NULL;
-extern ucontext_t main_context; // para regresar al main
+#include <sys/time.h>
+#include <stdint.h>
 
-static void enqueue(my_thread_t *thread) {
+my_thread_t *current_thread = NULL;
+static my_thread_t *realtime_queue = NULL;
+extern ucontext_t main_context;
+
+static void enqueue_edf(my_thread_t *thread) {
     thread->next = NULL;
-    if (!priority_queue || thread->priority < priority_queue->priority) {
-        thread->next = priority_queue;
-        priority_queue = thread;
+
+    if (!realtime_queue || thread->priority < realtime_queue->priority) {
+        thread->next = realtime_queue;
+        realtime_queue = thread;
         return;
     }
 
     my_thread_t *prev = NULL;
-    my_thread_t *curr = priority_queue;
+    my_thread_t *curr = realtime_queue;
 
     while (curr && thread->priority >= curr->priority) {
         prev = curr;
@@ -29,12 +33,12 @@ static void enqueue(my_thread_t *thread) {
 
 static my_thread_t *dequeue_next_ready(void) {
     my_thread_t *prev = NULL;
-    my_thread_t *curr = priority_queue;
+    my_thread_t *curr = realtime_queue;
 
     while (curr) {
         if (curr->state == READY) {
             if (prev) prev->next = curr->next;
-            else priority_queue = curr->next;
+            else realtime_queue = curr->next;
             curr->next = NULL;
             return curr;
         }
@@ -46,19 +50,29 @@ static my_thread_t *dequeue_next_ready(void) {
 }
 
 void scheduler_init(void) {
-    priority_queue = NULL;
+    realtime_queue = NULL;
 }
 
 void scheduler_add(my_thread_t *thread) {
-    enqueue(thread);
+    enqueue_edf(thread);
 }
 
 void scheduler_yield(void) {
-    my_thread_t *prev = current_thread;
-    scheduler_add(current_thread);
+    long now = get_current_time();
+    if (current_thread && current_thread->state == READY) {
+        if (now >= current_thread->tiempo_ejecucion) {
+            scheduler_end(); // ya usó su tiempo
+        } else {
+            // Aún le queda tiempo: puede seguir más adelante
+            scheduler_add(current_thread);
+        }
+    }
+
     my_thread_t *next = dequeue_next_ready();
     if (next) {
+        my_thread_t *prev = current_thread;
         current_thread = next;
+        next->inicio_ejecucion = get_current_time();
         swapcontext(&prev->context, &next->context);
     }
 }
@@ -66,6 +80,8 @@ void scheduler_yield(void) {
 void scheduler_end(void) {
     my_thread_t *next = dequeue_next_ready();
     if (next) {
+        next->inicio_ejecucion = get_current_time() + next->inicio_ejecucion;
+        next->tiempo_ejecucion = get_current_time() + next->tiempo_ejecucion;
         current_thread = next;
         setcontext(&next->context);
     } else {
@@ -77,6 +93,8 @@ void scheduler_end(void) {
 void scheduler_run(void) {
     my_thread_t *next = dequeue_next_ready();
     if (next) {
+        next->inicio_ejecucion = get_current_time() + next->inicio_ejecucion;
+        next->tiempo_ejecucion = get_current_time() + next->tiempo_ejecucion;
         current_thread = next;
         swapcontext(&main_context, &next->context);
     } else {
