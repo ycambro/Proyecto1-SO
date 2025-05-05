@@ -11,6 +11,7 @@
 
 typedef struct {
     char simbolo;
+    int fila;
     int x;
 } Objeto;
 
@@ -18,10 +19,11 @@ typedef struct {
 Objeto objetos[MAX_OBJETOS];
 int total_objetos = 0;
 
-void actualizar_objeto(char simbolo, int x) {
+void actualizar_objeto(char simbolo, int fila, int x) {
     for (int i = 0; i < total_objetos; i++) {
         if (objetos[i].simbolo == simbolo) {
             objetos[i].x = x;
+            objetos[i].fila = fila;
             return;
         }
     }
@@ -29,6 +31,7 @@ void actualizar_objeto(char simbolo, int x) {
     if (total_objetos < MAX_OBJETOS) {
         objetos[total_objetos].simbolo = simbolo;
         objetos[total_objetos].x = x;
+        objetos[total_objetos].fila = fila;
         total_objetos++;
     }
 }
@@ -36,7 +39,7 @@ void actualizar_objeto(char simbolo, int x) {
 void dibujar_objetos() {
     clear();
     for (int i = 0; i < total_objetos; i++) {
-        mvprintw(i, objetos[i].x, "%c", objetos[i].simbolo);
+        mvprintw(objetos[i].fila, objetos[i].x, "%c", objetos[i].simbolo);
     }
     refresh();
 }
@@ -72,9 +75,9 @@ int main() {
 
         buffer[n] = '\0';
         char simbolo;
-        int x;
-        if (sscanf(buffer, "%c:%d", &simbolo, &x) == 2) {
-            actualizar_objeto(simbolo, x);
+        int fila, x;
+        if (sscanf(buffer, "%c:%d:%d", &simbolo, &fila, &x) == 3) {
+            actualizar_objeto(simbolo, fila, x);
             dibujar_objetos();
         }
 

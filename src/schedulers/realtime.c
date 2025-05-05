@@ -5,7 +5,7 @@
 
 my_thread_t *current_thread = NULL;
 static my_thread_t *priority_queue = NULL;
-ucontext_t main_context; // para regresar al main
+extern ucontext_t main_context; // para regresar al main
 
 static void enqueue(my_thread_t *thread) {
     thread->next = NULL;
