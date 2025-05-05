@@ -6,7 +6,7 @@
 #define MAX_OBJETOS 10
 
 typedef struct {
-    char simbolo;
+    char *simbolo;
     int fila;
     int velocidad;
     int inicio;

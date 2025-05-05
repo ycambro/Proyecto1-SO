@@ -6,6 +6,22 @@
 ObjetoConfig objetos[MAX_OBJETOS];
 int num_objetos = 0;
 
+char *leer_figura_ascii(const char *ruta) {
+    FILE *f = fopen(ruta, "r");
+    if (!f) return NULL;
+
+    fseek(f, 0, SEEK_END);
+    long len = ftell(f);
+    rewind(f);
+
+    char *buffer = malloc(len + 1);
+    fread(buffer, 1, len, f);
+    buffer[len] = '\0';
+
+    fclose(f);
+    return buffer;
+}
+
 static int config_handler(void *user, const char *section, const char *name, const char *value) {
     ObjetoConfig *obj;
 
@@ -14,7 +30,7 @@ static int config_handler(void *user, const char *section, const char *name, con
 
     if (strcmp(name, "simbolo") == 0) {
         obj = &objetos[num_objetos++];
-        obj->simbolo = value[0];
+        obj->simbolo = leer_figura_ascii(value);
         obj->tickets = 1;
         obj->prioridad = 0;
         obj->scheduler = SCHED_RR;
@@ -43,3 +59,5 @@ int cargar_config(const char *ruta) {
     num_objetos = 0;
     return ini_parse(ruta, config_handler, NULL);
 }
+
+
