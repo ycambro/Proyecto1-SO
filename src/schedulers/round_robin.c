@@ -5,6 +5,7 @@
 
 my_thread_t *current_thread = NULL;
 static my_thread_t *ready_queue = NULL;
+extern ucontext_t main_context; // para regresar al main
 
 static void enqueue(my_thread_t *thread) {
     thread->next = NULL;
@@ -49,7 +50,7 @@ void scheduler_end(void) {
         setcontext(&next->context);
     } else {
         printf("[round_robin] No hay más hilos. Terminando ejecución.\n");
-        exit(0);
+        setcontext(&main_context);
     }
 }
 
@@ -57,7 +58,7 @@ void scheduler_run(void) {
     my_thread_t *next = dequeue();
     if (next) {
         current_thread = next;
-        setcontext(&next->context);
+        swapcontext(&main_context, &next -> context);
     } else {
         printf("[round_robin] No hay hilos listos para ejecutar.\n");
     }
