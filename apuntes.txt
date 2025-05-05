@@ -1,0 +1,4 @@
+make run_round       # corre test_round_robin
+make run_lottery     # corre test_lottery
+make run_realtime    # corre test_realtime
+make clean           # elimina todos los binarios
