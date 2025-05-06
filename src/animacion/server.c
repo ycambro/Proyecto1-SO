@@ -98,8 +98,20 @@ void animar_objeto_rotando(void *arg) {
     ObjetoConfig *cfg = (ObjetoConfig *)arg;
     int x = cfg->x_inicial;
     int y = cfg->y_inicial;
-    int dir_x = 1;
-    int dir_y = 1;
+
+    int dir_y;
+    if (cfg->y_inicial == cfg->y_final) {
+        dir_y = 0;
+    } else if (cfg->y_inicial < cfg->y_final) {
+        dir_y = 1;
+    }
+    
+    int dir_x;
+    if (cfg->x_inicial == cfg->x_final) {
+        dir_x = 0;
+    } else if (cfg->x_inicial < cfg->x_final) {
+        dir_x = 1;
+    }
     int rotacion = 0;
 
     char figura_original[1000];

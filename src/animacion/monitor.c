@@ -37,14 +37,14 @@ void actualizar_objeto(char *simbolo, int fila, int x) {
 }
 
 void dibujar_objetos() {
-    clear();
+    //clear();
     for (int i = 0; i < total_objetos; i++) {
         int y = objetos[i].fila;
         int x = objetos[i].x;
 
         char *linea = strtok(objetos[i].simbolo, "\n");
         while (linea) {
-            mvprintw(y, x, "%-*s", 500, "");
+            mvprintw(y, x-1, "%*s", strlen(linea)+5, "");
             mvprintw(y++, x, "%s", linea);
             linea = strtok(NULL, "\n");
         }
