@@ -21,18 +21,100 @@ int monitores[MAX_MONITORES];
 int total_monitores = 0;
 my_mutex_t monitores_mutex;
 
-void animar_objeto(void *arg) {
+void rotar_figura(const char *figura_original, char *figura_rotada, int grados, size_t max_len) {
+    char lineas[100][100];
+    int num_lineas = 0, max_ancho = 0;
+
+    // Copiar línea por línea sin modificar la original
+    const char *ptr = figura_original;
+    while (*ptr && num_lineas < 100) {
+        int i = 0;
+        while (*ptr != '\n' && *ptr != '\0' && i < 99) {
+            lineas[num_lineas][i++] = *ptr++;
+        }
+        lineas[num_lineas][i] = '\0';
+        if (i > max_ancho) max_ancho = i;
+        num_lineas++;
+        if (*ptr == '\n') ptr++;
+    }
+
+    if (num_lineas > max_ancho) {
+        max_ancho = num_lineas;
+    } else if (num_lineas < max_ancho) {
+        for (int i = num_lineas; i < max_ancho; i++) {
+            lineas[i][0] = '\0';
+        }
+        num_lineas = max_ancho;
+    }
+
+    // Asegurar que todas las líneas tengan el mismo ancho (relleno con espacios)
+    for (int i = 0; i < num_lineas; i++) {
+        int len = strlen(lineas[i]);
+        for (int j = len; j < max_ancho; j++) {
+            lineas[i][j] = ' ';
+        }
+        lineas[i][max_ancho] = '\0';
+    }
+
+    char resultado[1500] = "";
+    if (grados == 0) {
+        for (int i = 0; i < num_lineas; i++) {
+            strncat(resultado, lineas[i], sizeof(resultado) - strlen(resultado) - 1);
+            strncat(resultado, "\n", sizeof(resultado) - strlen(resultado) - 1);
+        }
+    } else if (grados == 90) {
+        for (int col = 0; col < max_ancho; col++) {
+            for (int row = num_lineas - 1; row >= 0; row--) {
+                char c[2] = {lineas[row][col], '\0'};
+                strncat(resultado, c, sizeof(resultado) - strlen(resultado) - 1);
+            }
+            strncat(resultado, "\n", sizeof(resultado) - strlen(resultado) - 1);
+        }
+    } else if (grados == 180) {
+        for (int i = num_lineas - 1; i >= 0; i--) {
+            for (int j = max_ancho - 1; j >= 0; j--) {
+                char c[2] = {lineas[i][j], '\0'};
+                strncat(resultado, c, sizeof(resultado) - strlen(resultado) - 1);
+            }
+            strncat(resultado, "\n", sizeof(resultado) - strlen(resultado) - 1);
+        }
+    } else if (grados == 270) {
+        for (int col = max_ancho - 1; col >= 0; col--) {
+            for (int row = 0; row < num_lineas; row++) {
+                char c[2] = {lineas[row][col], '\0'};
+                strncat(resultado, c, sizeof(resultado) - strlen(resultado) - 1);
+            }
+            strncat(resultado, "\n", sizeof(resultado) - strlen(resultado) - 1);
+        }
+    } else {
+        snprintf(resultado, sizeof(resultado), "Rotación %d° no soportada.\n", grados);
+    }
+
+    strncpy(figura_rotada, resultado, max_len);
+    figura_rotada[max_len - 1] = '\0';
+}
+
+void animar_objeto_rotando(void *arg) {
     ObjetoConfig *cfg = (ObjetoConfig *)arg;
     int x = cfg->x_inicial;
-    int dir = 1;
+    int y = cfg->y_inicial;
+    int dir_x = 1;
+    int dir_y = 1;
+    int rotacion = 0;
 
-    printf("[animar] Iniciando animación para %c (fila %d, vel %d)\n", cfg->simbolo, cfg->fila, cfg->velocidad);
+    char figura_original[1000];
+    strncpy(figura_original, cfg->figura_ascii, sizeof(figura_original));
+
+    printf("[animar_rotar] Animando con rotación de %d grados (fila %d, vel %d)\n", cfg->rotar, cfg->y_inicial, cfg->velocidad);
 
     while (1) {
         usleep(cfg->velocidad * 1000);
 
+        char figura_rotada[1000];
+        rotar_figura(figura_original, figura_rotada, rotacion, sizeof(figura_rotada));
+
         char mensaje[1500];
-        snprintf(mensaje, sizeof(mensaje), "%s:%d:%d\n", cfg->figura_ascii, cfg->fila, x);
+        snprintf(mensaje, sizeof(mensaje), "%s:%d:%d\n", figura_rotada, y, x);
 
         my_mutex_lock(&monitores_mutex);
         for (int i = 0; i < total_monitores; i++) {
@@ -40,10 +122,12 @@ void animar_objeto(void *arg) {
         }
         my_mutex_unlock(&monitores_mutex);
 
-        //printf("[server] Enviado: %s", mensaje);
+        rotacion = (rotacion + cfg->rotar) % 360;
+        x += dir_x;
+        if (x >= cfg->x_final || x <= cfg->x_inicial) dir_x *= -1;
 
-        x += dir;
-        if (x >= cfg->x_final || x <= cfg->x_inicial) dir *= -1;
+        y += dir_y;
+        if (y >= cfg->y_final || y <= cfg->y_inicial) dir_y *= -1;
 
         my_thread_yield();
     }
@@ -88,7 +172,7 @@ int main() {
         int param = (cfg->scheduler == SCHED_LOTTERY) ? cfg->tickets :
                     (cfg->scheduler == SCHED_REALTIME) ? cfg->prioridad : 0;
 
-        my_thread_create(&hilo, animar_objeto, cfg, cfg->scheduler, param);
+        my_thread_create(&hilo, animar_objeto_rotando, cfg, cfg->scheduler, param);
 
         printf("[server] Hilo creado para %c con scheduler %d, param %d\n", cfg->simbolo, cfg->scheduler, param);
     }

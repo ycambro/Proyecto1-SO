@@ -19,7 +19,6 @@ char *leer_figura_ascii(const char *ruta) {
     buffer[len] = '\0';
 
     fclose(f);
-    printf("Buffer: %s\n", buffer);
     return buffer;
 }
 
@@ -40,13 +39,15 @@ static int config_handler(void *user, const char *section, const char *name, con
         obj = &objetos[num_objetos - 1];
     }
 
-    if (strcmp(name, "fila") == 0) obj->fila = atoi(value);
+    if (strcmp(name, "y_inicial") == 0) obj->y_inicial = atoi(value);
+    else if (strcmp(name, "y_final") == 0) obj->y_final = atoi(value);
     else if (strcmp(name, "velocidad") == 0) obj->velocidad = atoi(value);
     else if (strcmp(name, "inicio") == 0) obj->inicio = atoi(value);
     else if (strcmp(name, "fin") == 0) obj->fin = atoi(value);
     else if (strcmp(name, "x_inicial") == 0) obj->x_inicial = atoi(value);
     else if (strcmp(name, "x_final") == 0) obj->x_final = atoi(value);
     else if (strcmp(name, "tickets") == 0) obj->tickets = atoi(value);
+    else if (strcmp(name, "rotar") == 0) obj->rotar = atoi(value);
     else if (strcmp(name, "prioridad") == 0) obj->prioridad = atoi(value);
     else if (strcmp(name, "scheduler") == 0) {
         if (strcmp(value, "roundrobin") == 0) obj->scheduler = SCHED_RR;

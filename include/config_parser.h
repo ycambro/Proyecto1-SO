@@ -7,15 +7,17 @@
 
 typedef struct {
     char simbolo;
-    int fila;
     int velocidad;
     int inicio;
     int fin;
     int x_inicial;
     int x_final;
+    int y_inicial;
+    int y_final;
     scheduler_t scheduler;
     int tickets;
     int prioridad;
+    int rotar;
     char *figura_ascii;
 } ObjetoConfig;
 
