@@ -6,7 +6,7 @@
 #define MAX_OBJETOS 10
 
 typedef struct {
-    char *simbolo;
+    char simbolo;
     int fila;
     int velocidad;
     int inicio;
@@ -16,6 +16,7 @@ typedef struct {
     scheduler_t scheduler;
     int tickets;
     int prioridad;
+    char *figura_ascii;
 } ObjetoConfig;
 
 extern ObjetoConfig objetos[MAX_OBJETOS];

@@ -7,21 +7,21 @@
 
 #define SERVER_IP "127.0.0.1"
 #define PORT 5000
-#define MAX_LINE 64
+#define MAX_LINE 1500
 
 typedef struct {
-    char simbolo;
+    char simbolo[1000];
     int fila;
     int x;
 } Objeto;
 
-#define MAX_OBJETOS 10
+#define MAX_OBJETOS 1000
 Objeto objetos[MAX_OBJETOS];
 int total_objetos = 0;
 
-void actualizar_objeto(char simbolo, int fila, int x) {
+void actualizar_objeto(char *simbolo, int fila, int x) {
     for (int i = 0; i < total_objetos; i++) {
-        if (objetos[i].simbolo == simbolo) {
+        if (strcmp(objetos[i].simbolo, simbolo) == 0) {
             objetos[i].x = x;
             objetos[i].fila = fila;
             return;
@@ -29,7 +29,7 @@ void actualizar_objeto(char simbolo, int fila, int x) {
     }
 
     if (total_objetos < MAX_OBJETOS) {
-        objetos[total_objetos].simbolo = simbolo;
+        strcpy(objetos[total_objetos].simbolo, simbolo);
         objetos[total_objetos].x = x;
         objetos[total_objetos].fila = fila;
         total_objetos++;
@@ -39,7 +39,15 @@ void actualizar_objeto(char simbolo, int fila, int x) {
 void dibujar_objetos() {
     clear();
     for (int i = 0; i < total_objetos; i++) {
-        mvprintw(objetos[i].fila, objetos[i].x, "%c", objetos[i].simbolo);
+        int y = objetos[i].fila;
+        int x = objetos[i].x;
+
+        char *linea = strtok(objetos[i].simbolo, "\n");
+        while (linea) {
+            mvprintw(y, x, "%-*s", 500, "");
+            mvprintw(y++, x, "%s", linea);
+            linea = strtok(NULL, "\n");
+        }
     }
     refresh();
 }
@@ -74,9 +82,9 @@ int main() {
         if (n <= 0) break;
 
         buffer[n] = '\0';
-        char simbolo;
+        char simbolo[1000];
         int fila, x;
-        if (sscanf(buffer, "%c:%d:%d", &simbolo, &fila, &x) == 3) {
+        if (sscanf(buffer, "%[^:]:%d:%d", simbolo, &fila, &x) == 3) {
             actualizar_objeto(simbolo, fila, x);
             dibujar_objetos();
         }

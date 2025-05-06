@@ -19,6 +19,7 @@ char *leer_figura_ascii(const char *ruta) {
     buffer[len] = '\0';
 
     fclose(f);
+    printf("Buffer: %s\n", buffer);
     return buffer;
 }
 
@@ -30,10 +31,11 @@ static int config_handler(void *user, const char *section, const char *name, con
 
     if (strcmp(name, "simbolo") == 0) {
         obj = &objetos[num_objetos++];
-        obj->simbolo = leer_figura_ascii(value);
+        obj->simbolo = value;
         obj->tickets = 1;
         obj->prioridad = 0;
         obj->scheduler = SCHED_RR;
+        obj->figura_ascii = leer_figura_ascii(value);
     } else {
         obj = &objetos[num_objetos - 1];
     }

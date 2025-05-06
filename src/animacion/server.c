@@ -31,8 +31,8 @@ void animar_objeto(void *arg) {
     while (1) {
         usleep(cfg->velocidad * 1000);
 
-        char mensaje[64];
-        snprintf(mensaje, sizeof(mensaje), "%c:%d:%d\n", cfg->simbolo, cfg->fila, x);
+        char mensaje[1500];
+        snprintf(mensaje, sizeof(mensaje), "%s:%d:%d\n", cfg->figura_ascii, cfg->fila, x);
 
         my_mutex_lock(&monitores_mutex);
         for (int i = 0; i < total_monitores; i++) {

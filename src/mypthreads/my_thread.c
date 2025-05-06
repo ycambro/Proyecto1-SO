@@ -46,7 +46,7 @@ int my_thread_create(my_thread_t **thread, void (*start_routine)(void *), void *
     if (sched_type == SCHED_LOTTERY)
         (*thread)->lottery_tickets = param > 0 ? param : 1;
     else if (sched_type == SCHED_REALTIME)
-        (*thread)->priority = param; // Asumimos que get_current_time() devuelve el tiempo actual en ms
+        (*thread)->priority = param;
         ObjetoConfig *cfg = (ObjetoConfig *)arg;
         (*thread)->deadline = 0; // No se usa en RR
         (*thread)->inicio_ejecucion = cfg->inicio;
