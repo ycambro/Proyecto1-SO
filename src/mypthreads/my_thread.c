@@ -53,8 +53,8 @@ int my_thread_create(my_thread_t **thread, void (*start_routine)(void *), void *
         (*thread)->deadline = 0; // No se usa en RR
     }
     ObjetoConfig *cfg = (ObjetoConfig *)arg;
-    (*thread)->inicio_ejecucion = cfg->inicio;
-    (*thread)->tiempo_ejecucion = cfg->fin;
+    (*thread)->inicio_ejecucion = cfg->inicio + get_current_time();
+    (*thread)->tiempo_ejecucion = cfg->fin + get_current_time();
     scheduler_add(*thread);
     return 0;
 }

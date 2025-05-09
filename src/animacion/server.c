@@ -204,5 +204,6 @@ int main() {
     if (sockfd >= 0) {
         close(sockfd);
     }
+    exit(0);
     return 0;
 }

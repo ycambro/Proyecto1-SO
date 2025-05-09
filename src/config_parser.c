@@ -22,6 +22,16 @@ char *leer_figura_ascii(const char *ruta) {
     return buffer;
 }
 
+typedef struct {
+    int cols;
+    int rows;
+} MonitorConfig;
+
+#define MAX_MONITORES 10
+extern MonitorConfig monitores_config[MAX_MONITORES];
+extern int num_monitores;
+
+
 static int config_handler(void *user, const char *section, const char *name, const char *value) {
     ObjetoConfig *obj;
 
