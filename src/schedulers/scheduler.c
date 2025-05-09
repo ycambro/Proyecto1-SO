@@ -47,7 +47,7 @@ void scheduler_yield(void) {
         } else {
             // Aún le queda tiempo: puede seguir más adelante
             scheduler_add(current_thread);
-        
+        }
     }
 
     my_thread_t *next = scheduler_pick_next();
