@@ -190,5 +190,19 @@ int main() {
     }
 
     scheduler_run();
+    // Esperar a que terminen los hilos
+    for (int i = 0; i < total_monitores; i++) {
+        close(monitores[i]);
+    }
+    close(sockfd);
+    printf("[server] Todos los monitores desconectados. Saliendo...\n");
+    my_mutex_destroy(&monitores_mutex);
+    for (int i = 0; i < num_objetos; i++) {
+        free(objetos[i].figura_ascii);
+    }
+    // Un-bind socket
+    if (sockfd >= 0) {
+        close(sockfd);
+    }
     return 0;
 }

@@ -6,21 +6,20 @@
 #include <sys/time.h>
 #include <stdint.h>
 
-extern ucontext_t main_context;
-extern my_thread_t *ready_queue;
 static my_thread_t *realtime_queue = NULL;
+extern ucontext_t main_context;
 
 static void enqueue_edf(my_thread_t *thread) {
     thread->next = NULL;
 
-    if (!ready_queue || thread->priority < ready_queue->priority) {
-        thread->next = ready_queue;
-        ready_queue = thread;
+    if (!realtime_queue || thread->priority < realtime_queue->priority) {
+        thread->next = realtime_queue;
+        realtime_queue = thread;
         return;
     }
 
     my_thread_t *prev = NULL;
-    my_thread_t *curr = ready_queue;
+    my_thread_t *curr = realtime_queue;
 
     while (curr && thread->priority >= curr->priority) {
         prev = curr;
@@ -33,12 +32,12 @@ static void enqueue_edf(my_thread_t *thread) {
 
 static my_thread_t *dequeue_next_ready(void) {
     my_thread_t *prev = NULL;
-    my_thread_t *curr = ready_queue;
+    my_thread_t *curr = realtime_queue;
 
     while (curr) {
         if (curr->state == READY) {
             if (prev) prev->next = curr->next;
-            else ready_queue = curr->next;
+            else realtime_queue = curr->next;
             curr->next = NULL;
             return curr;
         }
@@ -50,7 +49,7 @@ static my_thread_t *dequeue_next_ready(void) {
 }
 
 void realtime_scheduler_init(void) {
-    ready_queue = NULL;
+    realtime_queue = NULL;
 }
 
 void realtime_scheduler_add(my_thread_t *thread) {
@@ -100,4 +99,8 @@ void realtime_scheduler_run(void) {
     } else {
         printf("[realtime] No hay hilos listos para ejecutar.\n");
     }
+}
+
+my_thread_t* realtime_scheduler_pick() {
+    return dequeue_next_ready();
 }

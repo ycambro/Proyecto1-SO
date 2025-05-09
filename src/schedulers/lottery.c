@@ -4,25 +4,23 @@
 #include <time.h>
 #include <ucontext.h>
 
-extern ucontext_t main_context;  // ✅ Contexto global del main
-extern my_thread_t *ready_queue;
 static my_thread_t *lottery_queue = NULL;
+extern ucontext_t main_context;  // ✅ Contexto global del main
 
 static void lottery_enqueue(my_thread_t *thread) {
     thread->next = NULL;
-    if (!ready_queue) {
-        ready_queue = thread;
+    if (!lottery_queue) {
+        lottery_queue = thread;
     } else {
-        my_thread_t *tmp = ready_queue;
+        my_thread_t *tmp = lottery_queue;
         while (tmp->next) tmp = tmp->next;
         tmp->next = thread;
     }
 }
 
 static my_thread_t *pick_winner(void) {
-    printf("[lottery] Seleccionando ganador...\n");
     int total_tickets = 0;
-    for (my_thread_t *t = ready_queue; t; t = t->next) {
+    for (my_thread_t *t = lottery_queue; t; t = t->next) {
         if (t->state == READY)
             total_tickets += t->lottery_tickets;
     }
@@ -33,14 +31,14 @@ static my_thread_t *pick_winner(void) {
     int count = 0;
 
     my_thread_t *prev = NULL;
-    my_thread_t *curr = ready_queue;
+    my_thread_t *curr = lottery_queue;
 
     while (curr) {
         if (curr->state == READY) {
             count += curr->lottery_tickets;
             if (count >= winning_ticket) {
                 if (prev) prev->next = curr->next;
-                else ready_queue = curr->next;
+                else lottery_queue = curr->next;
                 curr->next = NULL;
                 return curr;
             }
@@ -53,7 +51,7 @@ static my_thread_t *pick_winner(void) {
 }
 
 void lottery_scheduler_init(void) {
-    ready_queue = NULL;
+    lottery_queue = NULL;
     srand(time(NULL)); // Inicializar generador aleatorio
 }
 
@@ -100,4 +98,7 @@ void lottery_scheduler_run(void) {
     } else {
         printf("[lottery] No hay hilos listos para ejecutar.\n");
     }
+}
+my_thread_t* lottery_scheduler_pick() {
+    return pick_winner();
 }

@@ -3,30 +3,29 @@
 #include <stdlib.h>
 #include <ucontext.h>
 
-extern my_thread_t *ready_queue;
 extern ucontext_t main_context; // para regresar al main
 static my_thread_t *rr_queque = NULL;
 
 static void rr_enqueue(my_thread_t *thread) {
     thread->next = NULL;
-    if (!ready_queue) {
-        ready_queue = thread;
+    if (!rr_queque) {
+        rr_queque = thread;
     } else {
-        my_thread_t *tmp = ready_queue;
+        my_thread_t *tmp = rr_queque;
         while (tmp->next) tmp = tmp->next;
         tmp->next = thread;
     }
 }
 
 static my_thread_t *rr_dequeue(void) {
-    if (!ready_queue) return NULL;
-    my_thread_t *t = ready_queue;
-    ready_queue = ready_queue->next;
+    if (!rr_queque) return NULL;
+    my_thread_t *t = rr_queque;
+    rr_queque = rr_queque->next;
     return t;
 }
 
 void rr_scheduler_init(void) {
-    ready_queue = NULL;
+    rr_queque = NULL;
 }
 
 void rr_scheduler_add(my_thread_t *thread) {
@@ -71,4 +70,8 @@ void rr_scheduler_run(void) {
     } else {
         printf("[round_robin] No hay hilos listos para ejecutar.\n");
     }
+}
+
+my_thread_t* rr_scheduler_pick() {
+    return rr_dequeue();
 }

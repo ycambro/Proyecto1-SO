@@ -7,10 +7,11 @@
 #include <ucontext.h>
 
 my_thread_t *current_thread = NULL;
-my_thread_t *ready_queue = NULL;
 
 void scheduler_init(void) {
-    ready_queue = NULL;
+    realtime_scheduler_init();
+    lottery_scheduler_init();
+    rr_scheduler_init();
 }
 
 void scheduler_add(my_thread_t *t) {
@@ -24,30 +25,60 @@ void scheduler_add(my_thread_t *t) {
     }
 }
 
+my_thread_t* scheduler_pick_next(void) {
+    my_thread_t *next;
+
+    next = realtime_scheduler_pick();  // intenta obtener un hilo RT listo
+    if (next) return next;
+
+    next = lottery_scheduler_pick();   // luego intenta con Lottery
+    if (next) return next;
+
+    return rr_scheduler_pick();        // por último, con RR
+}
+
 void scheduler_yield(void) {
-    switch (current_thread->sched_type) {
-        case SCHED_REALTIME:
-            realtime_scheduler_yield(); break;
-        case SCHED_LOTTERY:
-            lottery_scheduler_yield(); break;
-        case SCHED_RR:
-            rr_scheduler_yield(); break;
+    my_thread_t *prev = current_thread;
+    long now = get_current_time();
+
+    if (current_thread && current_thread->state == READY) {
+        if (now >= current_thread->tiempo_ejecucion) {
+            scheduler_end(); // ya usó su tiempo
+        } else {
+            // Aún le queda tiempo: puede seguir más adelante
+            scheduler_add(current_thread);
+        
+    }
+
+    my_thread_t *next = scheduler_pick_next();
+    if (next) {
+        current_thread = next;
+        swapcontext(&prev->context, &next->context);
     }
 }
 
 void scheduler_end(void) {
-    switch (current_thread->sched_type) {
-        case SCHED_REALTIME:
-            realtime_scheduler_end(); break;
-        case SCHED_LOTTERY:
-            lottery_scheduler_end(); break;
-        case SCHED_RR:
-            rr_scheduler_end(); break;
+    my_thread_t *next = scheduler_pick_next();
+    if (next) {
+        next->inicio_ejecucion = get_current_time() + next->inicio_ejecucion;
+        next->tiempo_ejecucion = get_current_time() + next->tiempo_ejecucion;
+        current_thread = next;
+        setcontext(&next->context);
+    } else {
+        printf("[scheduler] Todos los hilos han terminado. Volviendo a main.\n");
+        setcontext(&main_context);
     }
 }
 
+
 void scheduler_run(void) {
-    realtime_scheduler_run();
-    lottery_scheduler_run();
-    rr_scheduler_run();
+    my_thread_t *next = scheduler_pick_next();
+    if (next) {
+        next->inicio_ejecucion = get_current_time() + next->inicio_ejecucion;
+        next->tiempo_ejecucion = get_current_time() + next->tiempo_ejecucion;
+        current_thread = next;
+        swapcontext(&main_context, &next->context);
+    } else {
+        printf("[scheduler] No hay hilos listos para ejecutar.\n");
+    }
 }
