@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <ucontext.h>
 
-my_thread_t *current_thread = NULL;
-static my_thread_t *ready_queue = NULL;
+extern my_thread_t *ready_queue;
 extern ucontext_t main_context; // para regresar al main
+static my_thread_t *rr_queque = NULL;
 
-static void enqueue(my_thread_t *thread) {
+static void rr_enqueue(my_thread_t *thread) {
     thread->next = NULL;
     if (!ready_queue) {
         ready_queue = thread;
@@ -18,34 +18,41 @@ static void enqueue(my_thread_t *thread) {
     }
 }
 
-static my_thread_t *dequeue(void) {
+static my_thread_t *rr_dequeue(void) {
     if (!ready_queue) return NULL;
     my_thread_t *t = ready_queue;
     ready_queue = ready_queue->next;
     return t;
 }
 
-void scheduler_init(void) {
+void rr_scheduler_init(void) {
     ready_queue = NULL;
 }
 
-void scheduler_add(my_thread_t *thread) {
-    enqueue(thread);
+void rr_scheduler_add(my_thread_t *thread) {
+    rr_enqueue(thread);
 }
 
-void scheduler_yield(void) {
+void rr_scheduler_yield(void) {
+    long now = get_current_time();
+    if (now >= current_thread->tiempo_ejecucion) {
+        scheduler_end(); // ya usó su tiempo
+    }
+
     my_thread_t *prev = current_thread;
-    enqueue(current_thread);
-    my_thread_t *next = dequeue();
+    rr_enqueue(current_thread);
+    my_thread_t *next = rr_dequeue();
     if (next) {
         current_thread = next;
         swapcontext(&prev->context, &next->context);
     }
 }
 
-void scheduler_end(void) {
-    my_thread_t *next = dequeue();
+void rr_scheduler_end(void) {
+    my_thread_t *next = rr_dequeue();
     if (next) {
+        next->inicio_ejecucion = get_current_time() + next->inicio_ejecucion;
+        next->tiempo_ejecucion = get_current_time() + next->tiempo_ejecucion;
         current_thread = next;
         setcontext(&next->context);
     } else {
@@ -54,9 +61,11 @@ void scheduler_end(void) {
     }
 }
 
-void scheduler_run(void) {
-    my_thread_t *next = dequeue();
+void rr_scheduler_run(void) {
+    my_thread_t *next = rr_dequeue();
     if (next) {
+        next->inicio_ejecucion = get_current_time() + next->inicio_ejecucion;
+        next->tiempo_ejecucion = get_current_time() + next->tiempo_ejecucion;
         current_thread = next;
         swapcontext(&main_context, &next -> context);
     } else {

@@ -25,12 +25,11 @@ CC = gcc
 CFLAGS = -Wall -g
 
 # Scheduler a usar para el servidor
-SCHEDULER ?= realtime
-SCHED_SRC = $(SRC_DIR)/schedulers/$(SCHEDULER).c
+SCHED_SRC = $(SRC_DIR)/schedulers/scheduler.c
 
 # Servidor (compilado dinámicamente según scheduler elegido)
 $(SERVER_BIN): $(SERVER_SRC) $(PTHREADS_SRC) $(SCHED_SRC) $(INI_SRC)
-	@echo "🔧 Compilando servidor con scheduler: $(SCHEDULER)"
+	@echo "🔧 Compilando servidor con scheduler despachador"
 	$(CC) -o $@ $^ $(INCLUDE_DIR)
 
 # Monitor

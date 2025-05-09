@@ -43,15 +43,18 @@ int my_thread_create(my_thread_t **thread, void (*start_routine)(void *), void *
     (*thread)->detached = 0;
     (*thread)->joined = 0;
 
-    if (sched_type == SCHED_LOTTERY)
+    if (sched_type == SCHED_LOTTERY) 
+    {
         (*thread)->lottery_tickets = param > 0 ? param : 1;
-    else if (sched_type == SCHED_REALTIME)
+    }
+    else if (sched_type == SCHED_REALTIME) 
+    {
         (*thread)->priority = param;
-        ObjetoConfig *cfg = (ObjetoConfig *)arg;
         (*thread)->deadline = 0; // No se usa en RR
-        (*thread)->inicio_ejecucion = cfg->inicio;
-        (*thread)->tiempo_ejecucion = cfg->fin;
-
+    }
+    ObjetoConfig *cfg = (ObjetoConfig *)arg;
+    (*thread)->inicio_ejecucion = cfg->inicio;
+    (*thread)->tiempo_ejecucion = cfg->fin;
     scheduler_add(*thread);
     return 0;
 }

@@ -4,24 +4,25 @@
 #include <time.h>
 #include <ucontext.h>
 
-my_thread_t *current_thread = NULL;
+extern ucontext_t main_context;  // ✅ Contexto global del main
+extern my_thread_t *ready_queue;
 static my_thread_t *lottery_queue = NULL;
-ucontext_t main_context;  // ✅ Contexto global del main
 
-static void enqueue(my_thread_t *thread) {
+static void lottery_enqueue(my_thread_t *thread) {
     thread->next = NULL;
-    if (!lottery_queue) {
-        lottery_queue = thread;
+    if (!ready_queue) {
+        ready_queue = thread;
     } else {
-        my_thread_t *tmp = lottery_queue;
+        my_thread_t *tmp = ready_queue;
         while (tmp->next) tmp = tmp->next;
         tmp->next = thread;
     }
 }
 
 static my_thread_t *pick_winner(void) {
+    printf("[lottery] Seleccionando ganador...\n");
     int total_tickets = 0;
-    for (my_thread_t *t = lottery_queue; t; t = t->next) {
+    for (my_thread_t *t = ready_queue; t; t = t->next) {
         if (t->state == READY)
             total_tickets += t->lottery_tickets;
     }
@@ -32,14 +33,14 @@ static my_thread_t *pick_winner(void) {
     int count = 0;
 
     my_thread_t *prev = NULL;
-    my_thread_t *curr = lottery_queue;
+    my_thread_t *curr = ready_queue;
 
     while (curr) {
         if (curr->state == READY) {
             count += curr->lottery_tickets;
             if (count >= winning_ticket) {
                 if (prev) prev->next = curr->next;
-                else lottery_queue = curr->next;
+                else ready_queue = curr->next;
                 curr->next = NULL;
                 return curr;
             }
@@ -51,16 +52,22 @@ static my_thread_t *pick_winner(void) {
     return NULL;
 }
 
-void scheduler_init(void) {
-    lottery_queue = NULL;
+void lottery_scheduler_init(void) {
+    ready_queue = NULL;
     srand(time(NULL)); // Inicializar generador aleatorio
 }
 
-void scheduler_add(my_thread_t *thread) {
-    enqueue(thread);
+void lottery_scheduler_add(my_thread_t *thread) {
+    lottery_enqueue(thread);
 }
 
-void scheduler_yield(void) {
+void lottery_scheduler_yield(void) {
+    long now = get_current_time();
+
+    if (now >= current_thread->tiempo_ejecucion) {
+        scheduler_end(); // ya usó su tiempo
+    }
+
     my_thread_t *prev = current_thread;
     scheduler_add(current_thread);
     my_thread_t *next = pick_winner();
@@ -70,9 +77,11 @@ void scheduler_yield(void) {
     }
 }
 
-void scheduler_end(void) {
+void lottery_scheduler_end(void) {
     my_thread_t *next = pick_winner();
     if (next) {
+        next->inicio_ejecucion = get_current_time() + next->inicio_ejecucion;
+        next->tiempo_ejecucion = get_current_time() + next->tiempo_ejecucion;
         current_thread = next;
         setcontext(&next->context);
     } else {
@@ -81,9 +90,11 @@ void scheduler_end(void) {
     }
 }
 
-void scheduler_run(void) {
+void lottery_scheduler_run(void) {
     my_thread_t *next = pick_winner();
     if (next) {
+        next->inicio_ejecucion = get_current_time() + next->inicio_ejecucion;
+        next->tiempo_ejecucion = get_current_time() + next->tiempo_ejecucion;
         current_thread = next;
         swapcontext(&main_context, &next->context);  // ✅ guardar contexto de main
     } else {
