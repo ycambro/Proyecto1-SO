@@ -3,6 +3,8 @@
 
 #include "scheduler.h"
 
+#define MAX_MONITORES 10
+
 #define MAX_OBJETOS 10
 
 typedef struct {
@@ -20,6 +22,14 @@ typedef struct {
     int rotar;
     char *figura_ascii;
 } ObjetoConfig;
+
+typedef struct {
+    int cols;
+    int rows;
+} MonitorConfig;
+
+extern MonitorConfig monitores_config[MAX_MONITORES];
+extern int num_monitores;
 
 extern ObjetoConfig objetos[MAX_OBJETOS];
 extern int num_objetos;

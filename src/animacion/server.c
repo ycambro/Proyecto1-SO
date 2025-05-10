@@ -15,11 +15,68 @@
 ucontext_t main_context;
 
 #define PUERTO 5000
-#define MAX_MONITORES 1
 
 int monitores[MAX_MONITORES];
 int total_monitores = 0;
 my_mutex_t monitores_mutex;
+
+int obtener_offset_monitor(int idx) {
+    int offset = 0;
+    for (int i = 0; i < idx; i++) {
+        offset += monitores_config[i].cols;
+    }
+    return offset;
+}
+
+int ancho_total_escenario() {
+    int total = 0;
+    for (int i = 0; i < num_monitores; i++) {
+        total += monitores_config[i].cols;
+    }
+    return total;
+}
+
+void enviar_figura_dividida(const char *figura, int y, int x_inicio) {
+    for (int i = 0; i < total_monitores; i++) {
+        int offset = obtener_offset_monitor(i);
+        int cols = monitores_config[i].cols;
+        int x_rel = x_inicio - offset;
+
+        // Si la figura no intersecta este monitor, continuar
+        if (x_rel >= cols || x_rel + strlen(figura) < 0) continue;
+
+        // Preparar figura recortada línea por línea
+        char resultado[1500] = "";
+        const char *ptr = figura;
+        char linea[256];
+
+        while (*ptr) {
+            int len = 0;
+            while (*ptr && *ptr != '\n' && len < 255) {
+                linea[len++] = *ptr++;
+            }
+            linea[len] = '\0';
+            if (*ptr == '\n') ptr++;
+
+            int start = (x_rel < 0) ? -x_rel : 0;
+            int max_copy = cols - ((x_rel < 0) ? 0 : x_rel);
+            if (max_copy <= 0) {
+                strcat(resultado, "\n");
+                continue;
+            }
+
+            char fragment[256] = "";
+            strncpy(fragment, linea + start, max_copy);
+            fragment[max_copy] = '\0';
+            strcat(resultado, fragment);
+            strcat(resultado, "\n");
+        }
+
+        char mensaje[1600];
+        snprintf(mensaje, sizeof(mensaje), "%s:%d:%d\n", resultado, y, (x_rel < 0 ? 0 : x_rel));
+        send(monitores[i], mensaje, strlen(mensaje), 0);
+    }
+}
 
 void rotar_figura(const char *figura_original, char *figura_rotada, int grados, size_t max_len) {
     char lineas[100][100];
@@ -128,10 +185,9 @@ void animar_objeto_rotando(void *arg) {
         char mensaje[1500];
         snprintf(mensaje, sizeof(mensaje), "%s:%d:%d\n", figura_rotada, y, x);
 
+        // Enviar mensaje a todos los monitores
         my_mutex_lock(&monitores_mutex);
-        for (int i = 0; i < total_monitores; i++) {
-            send(monitores[i], mensaje, strlen(mensaje), 0);
-        }
+        enviar_figura_dividida(figura_rotada, y, x);
         my_mutex_unlock(&monitores_mutex);
 
         rotacion = (rotacion + cfg->rotar) % 360;
@@ -149,6 +205,16 @@ int main() {
     scheduler_init();
     my_mutex_init(&monitores_mutex);
 
+    // Leer configuración
+    if (cargar_config("./config/config.ini") < 0) {
+        fprintf(stderr, "[server] Error leyendo config.ini\n");
+        exit(1);
+    }
+    printf("[server] Se cargaron %d objetos.\n", num_objetos);
+
+    int num_esperados = num_monitores;  // leídos del config.ini
+    printf("[server] Esperando %d monitores en puerto %d...\n", num_esperados, PUERTO);
+
     // Crear socket del servidor
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in server_addr = {0};
@@ -158,24 +224,15 @@ int main() {
 
     bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
     listen(sockfd, MAX_MONITORES);
-    printf("[server] Esperando monitores en puerto %d...\n", PUERTO);
 
     // Aceptar conexiones de monitores
-    while (total_monitores < MAX_MONITORES) {
+    while (total_monitores < num_esperados) {
         int cliente = accept(sockfd, NULL, NULL);
         if (cliente >= 0) {
             monitores[total_monitores++] = cliente;
             printf("[server] Monitor %d conectado.\n", total_monitores);
         }
     }
-
-    // Leer configuración
-    if (cargar_config("./config/config.ini") < 0) {
-        fprintf(stderr, "[server] Error leyendo config.ini\n");
-        exit(1);
-    }
-
-    printf("[server] Se cargaron %d objetos.\n", num_objetos);
 
     // Crear hilos según el config
     for (int i = 0; i < num_objetos; i++) {
@@ -190,7 +247,6 @@ int main() {
     }
 
     scheduler_run();
-    // Esperar a que terminen los hilos
     for (int i = 0; i < total_monitores; i++) {
         close(monitores[i]);
     }
@@ -204,6 +260,6 @@ int main() {
     if (sockfd >= 0) {
         close(sockfd);
     }
-    exit(0);
+    exit(1);
     return 0;
 }
