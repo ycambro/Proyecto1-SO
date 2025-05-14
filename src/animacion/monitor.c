@@ -63,6 +63,8 @@ void dibujar_objetos() {
         while (linea) {
             mvprintw(y, x-1, "%*s", strlen(linea)+5, "");
             mvprintw(y++, x, "%s", linea);
+            if (y >= LINES) break;
+            if (x >= COLS) break;
             linea = strtok(NULL, "\n");
         }
     }
@@ -107,7 +109,7 @@ int main() {
         }
 
         //usleep(50000); // 50 ms
-        a_mimir(500);
+        a_mimir(50);
     }
 
     endwin();
