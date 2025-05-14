@@ -151,6 +151,37 @@ void rotar_figura(const char *figura_original, char *figura_rotada, int grados, 
     figura_rotada[max_len - 1] = '\0';
 }
 
+void calcular_figura(const char *figura, size_t max_len, int *ancho, int *alto) {
+    const char *ptr = figura;
+    *alto = 0;
+    *ancho = 0;
+
+    while (*ptr) {
+        if (*ptr == '\n') {
+            (*alto)++;
+            if (*ancho < ptr - figura) {
+                *ancho = ptr - figura;
+            }
+            figura = ptr + 1;
+        }
+        ptr++;
+    }
+
+    if (figura != ptr) {
+        (*alto)++;
+        if (*ancho < ptr - figura) {
+            *ancho = ptr - figura;
+        }
+    }
+}
+
+void limpiar_figura(char *figura, size_t max_len) {
+    for (size_t i = 0; i < max_len; i++) {
+        figura[i] = ' ';
+    }
+    figura[max_len - 1] = '\0';
+}
+
 void a_mimir(int tiempo_ms) {
     long tiempo = get_current_time();
     while (1) {
@@ -158,10 +189,6 @@ void a_mimir(int tiempo_ms) {
             break;
         }
     }
-}
-
-char boom_figura() {
-    return '  *   *  \n * BOOM *\n  *   *  ';
 }
 
 void animar_objeto_rotando(void *arg) {
@@ -192,9 +219,10 @@ void animar_objeto_rotando(void *arg) {
     while (1) {
         a_mimir(500);
 
-        // Imprimir tiempo de ejecución
-        if (current_thread -> fin_ejecucion < get_current_time()) {
+        if (current_thread -> fin_ejecucion < get_current_time() && current_thread -> sched_type == SCHED_REALTIME) {
             strncpy(figura_original, "  *   *  \n * BOOM *\n  *   *  ", sizeof(figura_original));
+        } else if (current_thread -> fin_ejecucion < get_current_time() && current_thread -> sched_type != SCHED_REALTIME) {
+            limpiar_figura(figura_original, sizeof(figura_original));
         }
 
         char figura_rotada[1000];
