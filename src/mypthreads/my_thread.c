@@ -54,7 +54,8 @@ int my_thread_create(my_thread_t **thread, void (*start_routine)(void *), void *
     }
     ObjetoConfig *cfg = (ObjetoConfig *)arg;
     (*thread)->inicio_ejecucion = cfg->inicio + get_current_time();
-    (*thread)->tiempo_ejecucion = cfg->fin + get_current_time();
+    (*thread)->fin_ejecucion = cfg->fin + get_current_time();
+    (*thread)->tiempo_ejecucion = cfg->fin - cfg->inicio;
     scheduler_add(*thread);
     return 0;
 }

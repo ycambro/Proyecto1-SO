@@ -66,7 +66,7 @@ void scheduler_yield(void) {
     long now = get_current_time();
 
     if (current_thread && current_thread->state == READY) {
-        if (now >= current_thread->tiempo_ejecucion) {
+        if (now >= current_thread->fin_ejecucion) {
             scheduler_end(); // ya usó su tiempo
         } else {
             // Aún le queda tiempo: puede seguir más adelante
@@ -84,6 +84,11 @@ void scheduler_yield(void) {
 void scheduler_end(void) {
     my_thread_t *next = scheduler_pick_next();
     if (next) {
+        long now = get_current_time();
+        now = now - next->inicio_ejecucion;
+        next->inicio_ejecucion = next->inicio_ejecucion + now;
+        next->fin_ejecucion = next->fin_ejecucion + now;
+
         current_thread = next;
         setcontext(&next->context);
     } else {

@@ -34,7 +34,7 @@ void rr_scheduler_add(my_thread_t *thread) {
 
 void rr_scheduler_yield(void) {
     long now = get_current_time();
-    if (now >= current_thread->tiempo_ejecucion) {
+    if (now >= current_thread->fin_ejecucion) {
         scheduler_end(); // ya usó su tiempo
     }
 
@@ -51,7 +51,7 @@ void rr_scheduler_end(void) {
     my_thread_t *next = rr_dequeue();
     if (next) {
         next->inicio_ejecucion = get_current_time() + next->inicio_ejecucion;
-        next->tiempo_ejecucion = get_current_time() + next->tiempo_ejecucion;
+        next->fin_ejecucion = get_current_time() + next->fin_ejecucion;
         current_thread = next;
         setcontext(&next->context);
     } else {
@@ -64,7 +64,7 @@ void rr_scheduler_run(void) {
     my_thread_t *next = rr_dequeue();
     if (next) {
         next->inicio_ejecucion = get_current_time() + next->inicio_ejecucion;
-        next->tiempo_ejecucion = get_current_time() + next->tiempo_ejecucion;
+        next->fin_ejecucion = get_current_time() + next->fin_ejecucion;
         current_thread = next;
         swapcontext(&main_context, &next -> context);
     } else {

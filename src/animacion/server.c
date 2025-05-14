@@ -160,6 +160,10 @@ void a_mimir(int tiempo_ms) {
     }
 }
 
+char boom_figura() {
+    return '  *   *  \n * BOOM *\n  *   *  ';
+}
+
 void animar_objeto_rotando(void *arg) {
     ObjetoConfig *cfg = (ObjetoConfig *)arg;
     int x = cfg->x_inicial;
@@ -187,6 +191,11 @@ void animar_objeto_rotando(void *arg) {
 
     while (1) {
         a_mimir(500);
+
+        // Imprimir tiempo de ejecución
+        if (current_thread -> fin_ejecucion < get_current_time()) {
+            strncpy(figura_original, "  *   *  \n * BOOM *\n  *   *  ", sizeof(figura_original));
+        }
 
         char figura_rotada[1000];
         rotar_figura(figura_original, figura_rotada, rotacion, sizeof(figura_rotada));

@@ -30,8 +30,8 @@ typedef struct my_thread {
 
     // Tiempo real
     int deadline;          // Menor deadline = más urgente
-    int tiempo_ejecucion;    // Tiempo estimado para completar
     int inicio_ejecucion;    // Para seguimiento durante ejecución
+    int fin_ejecucion;      // Tiempo estimado de finalización
 } my_thread_t;
 
 
