@@ -151,6 +151,15 @@ void rotar_figura(const char *figura_original, char *figura_rotada, int grados, 
     figura_rotada[max_len - 1] = '\0';
 }
 
+void a_mimir(int tiempo_ms) {
+    long tiempo = get_current_time();
+    while (1) {
+        if (get_current_time() - tiempo > tiempo_ms) {
+            break;
+        }
+    }
+}
+
 void animar_objeto_rotando(void *arg) {
     ObjetoConfig *cfg = (ObjetoConfig *)arg;
     int x = cfg->x_inicial;
@@ -177,7 +186,7 @@ void animar_objeto_rotando(void *arg) {
     printf("[animar_rotar] Animando con rotación de %d grados (fila %d, vel %d)\n", cfg->rotar, cfg->y_inicial, cfg->velocidad);
 
     while (1) {
-        usleep(cfg->velocidad * 1000);
+        a_mimir(500);
 
         char figura_rotada[1000];
         rotar_figura(figura_original, figura_rotada, rotacion, sizeof(figura_rotada));

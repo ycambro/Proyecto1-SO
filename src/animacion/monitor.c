@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <ncurses.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
+#include <stdint.h>
 
 #define SERVER_IP "127.0.0.1"
 #define PORT 5000
@@ -18,6 +20,21 @@ typedef struct {
 #define MAX_OBJETOS 1000
 Objeto objetos[MAX_OBJETOS];
 int total_objetos = 0;
+
+uint64_t get_current_time() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (uint64_t)(tv.tv_sec) * 1000 + (uint64_t)(tv.tv_usec) / 1000;
+}
+
+void a_mimir(int tiempo_ms) {
+    long ahora = get_current_time();
+    while (1) {
+        if (get_current_time() - ahora > tiempo_ms) {
+            break;
+        }
+    }
+}
 
 void actualizar_objeto(char *simbolo, int fila, int x) {
     for (int i = 0; i < total_objetos; i++) {
@@ -89,7 +106,8 @@ int main() {
             dibujar_objetos();
         }
 
-        usleep(50000); // 50 ms
+        //usleep(50000); // 50 ms
+        a_mimir(500);
     }
 
     endwin();
