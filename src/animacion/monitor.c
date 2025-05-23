@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <stdint.h>
+#include <bits/getopt_core.h>
 
 #define SERVER_IP "127.0.0.1"
 #define PORT 5000
@@ -71,7 +72,8 @@ void dibujar_objetos() {
     refresh();
 }
 
-int main() {
+// ✅ Función reutilizable para monitor desde animar
+int run_client(const char* host, int port) {
     int sockfd;
     struct sockaddr_in serv_addr;
     char buffer[MAX_LINE];
@@ -83,15 +85,14 @@ int main() {
     }
 
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
-    inet_pton(AF_INET, SERVER_IP, &serv_addr.sin_addr);
+    serv_addr.sin_port = htons(port);
+    inet_pton(AF_INET, host, &serv_addr.sin_addr);
 
     if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
         perror("connect");
         exit(1);
     }
 
-    // Iniciar ncurses
     initscr();
     noecho();
     curs_set(FALSE);
@@ -108,11 +109,30 @@ int main() {
             dibujar_objetos();
         }
 
-        //usleep(50000); // 50 ms
-        a_mimir(50);
+        usleep(50000); // 50 ms
     }
 
     endwin();
     close(sockfd);
     return 0;
+}
+
+// ✅ Ejecutable tradicional desde `make run_monitor`
+int main(int argc, char* argv[]) {
+    const char* host = "127.0.0.1";  // por defecto
+    int port = 5000;
+
+    int opt;
+    while ((opt = getopt(argc, argv, "m:p:")) != -1) {
+        switch (opt) {
+            case 'm': host = optarg; break;
+            case 'p': port = atoi(optarg); break;
+            default:
+                fprintf(stderr, "Uso: %s [-m host] [-p puerto]\n", argv[0]);
+                return EXIT_FAILURE;
+        }
+    }
+
+    printf("[monitor] Conectando a %s:%d...\n", host, port);
+    return run_client(host, port);
 }
