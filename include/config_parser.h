@@ -21,12 +21,17 @@ typedef struct {
     int prioridad;
     int rotar;
     char *figura_ascii;
+    int id;
 } ObjetoConfig;
 
 typedef struct {
     int cols;
     int rows;
 } MonitorConfig;
+
+typedef struct {
+    int quantum;
+} QuantumConfig;
 
 extern MonitorConfig monitores_config[MAX_MONITORES];
 extern int num_monitores;

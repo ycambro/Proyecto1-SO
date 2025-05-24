@@ -36,7 +36,7 @@ int ancho_total_escenario() {
     return total;
 }
 
-void enviar_figura_dividida(const char *figura, int y, int x_inicio) {
+void enviar_figura_dividida(const char *figura, int y, int x_inicio, int objetoId) {
     for (int i = 0; i < total_monitores; i++) {
         int offset = obtener_offset_monitor(i);
         int cols = monitores_config[i].cols;
@@ -73,7 +73,7 @@ void enviar_figura_dividida(const char *figura, int y, int x_inicio) {
         }
 
         char mensaje[1600];
-        snprintf(mensaje, sizeof(mensaje), "%s:%d:%d\n", resultado, y, (x_rel < 0 ? 0 : x_rel));
+        snprintf(mensaje, sizeof(mensaje), "%s:%d:%d:%d\n", resultado, y, (x_rel < 0 ? 0 : x_rel), objetoId);
         send(monitores[i], mensaje, strlen(mensaje), 0);
     }
 }
@@ -201,6 +201,8 @@ void animar_objeto_rotando(void *arg) {
         dir_y = 0;
     } else if (cfg->y_inicial < cfg->y_final) {
         dir_y = 1;
+    } else {
+        dir_y = -1;
     }
     
     int dir_x;
@@ -208,6 +210,8 @@ void animar_objeto_rotando(void *arg) {
         dir_x = 0;
     } else if (cfg->x_inicial < cfg->x_final) {
         dir_x = 1;
+    } else {
+        dir_x = -1;
     }
     int rotacion = 0;
 
@@ -219,9 +223,12 @@ void animar_objeto_rotando(void *arg) {
     while (1) {
         a_mimir(500);
 
-        if (current_thread -> fin_ejecucion < get_current_time() && current_thread -> sched_type == SCHED_REALTIME) {
+        if (current_thread -> fin_ejecucion < get_current_time() && current_thread -> sched_type == SCHED_REALTIME && (cfg -> x_final != x || cfg -> y_final != y)) {
             strncpy(figura_original, "  *   *  \n * BOOM *\n  *   *  ", sizeof(figura_original));
-        } else if (current_thread -> fin_ejecucion < get_current_time() && current_thread -> sched_type != SCHED_REALTIME) {
+            enviar_figura_dividida(figura_original, y, x, cfg->id);
+            a_mimir(500);
+            limpiar_figura(figura_original, sizeof(figura_original));
+        } else if (current_thread -> fin_ejecucion < get_current_time() && cfg -> x_final == x) {
             limpiar_figura(figura_original, sizeof(figura_original));
         }
 
@@ -233,7 +240,7 @@ void animar_objeto_rotando(void *arg) {
 
         // Enviar mensaje a todos los monitores
         my_mutex_lock(&monitores_mutex);
-        enviar_figura_dividida(figura_rotada, y, x);
+        enviar_figura_dividida(figura_rotada, y, x, cfg->id);
         my_mutex_unlock(&monitores_mutex);
 
         rotacion = (rotacion + cfg->rotar) % 360;

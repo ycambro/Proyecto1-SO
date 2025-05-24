@@ -9,6 +9,9 @@ int num_objetos = 0;
 MonitorConfig monitores_config[MAX_MONITORES];
 int num_monitores = 0;
 
+QuantumConfig quantum_config[1];
+int quantum = 0;
+
 char *leer_figura_ascii(const char *ruta) {
     FILE *f = fopen(ruta, "r");
     if (!f) return NULL;
@@ -28,6 +31,7 @@ char *leer_figura_ascii(const char *ruta) {
 static int config_handler(void *user, const char *section, const char *name, const char *value) {
     static ObjetoConfig *obj = NULL;
     static MonitorConfig *mon = NULL;
+    static QuantumConfig *quantum = NULL;
 
     // Si sección empieza con "monitor"
     if (strncmp(section, "monitor", 7) == 0) {
@@ -40,6 +44,15 @@ static int config_handler(void *user, const char *section, const char *name, con
         else if (strcmp(name, "rows") == 0) mon->rows = atoi(value);
     }
 
+    else if (strncmp(section, "quantum", 7) == 0) {
+        if (quantum == NULL) {
+            quantum = &quantum_config[0];
+        }
+        if (strcmp(name, "quantum") == 0) {
+            quantum->quantum = atoi(value);
+        }
+    }
+
     // Si sección empieza con "objeto"
     else if (strncmp(section, "objeto", 6) == 0) {
         if (strcmp(name, "simbolo") == 0) {
@@ -50,6 +63,7 @@ static int config_handler(void *user, const char *section, const char *name, con
             obj->tickets = 1;
             obj->prioridad = 0;
             obj->scheduler = SCHED_RR;
+            obj->id = num_objetos;
         }
 
         if (!obj) return 0;

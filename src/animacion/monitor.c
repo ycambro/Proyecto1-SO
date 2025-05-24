@@ -13,9 +13,10 @@
 #define MAX_LINE 1500
 
 typedef struct {
+    int id;
     char simbolo[1000];
-    int fila;
-    int x;
+    int fila, fila_prev;
+    int x, x_prev;
 } Objeto;
 
 #define MAX_OBJETOS 1000
@@ -37,9 +38,12 @@ void a_mimir(int tiempo_ms) {
     }
 }
 
-void actualizar_objeto(char *simbolo, int fila, int x) {
+void actualizar_objeto(char *simbolo, int fila, int x, int id) {
     for (int i = 0; i < total_objetos; i++) {
-        if (strcmp(objetos[i].simbolo, simbolo) == 0) {
+        if (id == objetos[i].id) {
+            strcpy(objetos[i].simbolo, simbolo);
+            objetos[i].x_prev = objetos[i].x;
+            objetos[i].fila_prev = objetos[i].fila;
             objetos[i].x = x;
             objetos[i].fila = fila;
             return;
@@ -48,25 +52,52 @@ void actualizar_objeto(char *simbolo, int fila, int x) {
 
     if (total_objetos < MAX_OBJETOS) {
         strcpy(objetos[total_objetos].simbolo, simbolo);
+        objetos[total_objetos].id = id;
         objetos[total_objetos].x = x;
         objetos[total_objetos].fila = fila;
+        objetos[total_objetos].x_prev = x;
+        objetos[total_objetos].fila_prev = fila;
         total_objetos++;
     }
 }
 
-void dibujar_objetos() {
+
+void dibujar_escenario() {
     clear();
+    for (int i = 0; i < LINES; i++) {
+        for (int j = 0; j < COLS; j++) {
+            mvaddch(i, j, ' ');
+        }
+    }
+    refresh();
+}
+
+void dibujar_objetos() {
+    dibujar_escenario();
     for (int i = 0; i < total_objetos; i++) {
         int y = objetos[i].fila;
         int x = objetos[i].x;
+        int y_prev = objetos[i].fila_prev;
+        int x_prev = objetos[i].x_prev;
+
+        char figura[1000];
+        strcpy(figura, objetos[i].simbolo);
+        if (y_prev != y) {
+            char *lineaAnterior = strtok(figura, "\n");
+            while (lineaAnterior) {
+                mvprintw(y_prev, x_prev, "%*s", strlen(lineaAnterior), " ");
+                lineaAnterior = strtok(NULL, "\n");
+                y_prev++;
+            }
+        }
 
         char *linea = strtok(objetos[i].simbolo, "\n");
         while (linea) {
-            mvprintw(y, x, "%*s", strlen(linea)+5, "");
             mvprintw(y++, x, "%s", linea);
             if (y >= LINES) break;
             if (x >= COLS) break;
             linea = strtok(NULL, "\n");
+            y_prev++;
         }
     }
     refresh();
@@ -103,13 +134,13 @@ int run_client(const char* host, int port) {
 
         buffer[n] = '\0';
         char simbolo[1000];
-        int fila, x;
-        if (sscanf(buffer, "%[^:]:%d:%d", simbolo, &fila, &x) == 3) {
-            actualizar_objeto(simbolo, fila, x);
+        int fila, x, id;
+        if (sscanf(buffer, "%[^:]:%d:%d:%d", simbolo, &fila, &x, &id) == 4) {
+            actualizar_objeto(simbolo, fila, x, id);
             dibujar_objetos();
         }
 
-        usleep(50000); // 50 ms
+        a_mimir(10); // Simula un tiempo de espera
     }
 
     endwin();
