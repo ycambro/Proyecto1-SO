@@ -50,8 +50,8 @@ void rr_scheduler_yield(void) {
 void rr_scheduler_end(void) {
     my_thread_t *next = rr_dequeue();
     if (next) {
-        next->inicio_ejecucion = get_current_time() + next->inicio_ejecucion;
-        next->fin_ejecucion = get_current_time() + next->fin_ejecucion;
+        next->inicio_ejecucion = get_current_time();
+        next->fin_ejecucion = get_current_time() + next->quantum;
         current_thread = next;
         setcontext(&next->context);
     } else {
@@ -63,8 +63,8 @@ void rr_scheduler_end(void) {
 void rr_scheduler_run(void) {
     my_thread_t *next = rr_dequeue();
     if (next) {
-        next->inicio_ejecucion = get_current_time() + next->inicio_ejecucion;
-        next->fin_ejecucion = get_current_time() + next->fin_ejecucion;
+        next->inicio_ejecucion = get_current_time();
+        next->fin_ejecucion = get_current_time() + next->quantum;
         current_thread = next;
         swapcontext(&main_context, &next -> context);
     } else {
@@ -73,5 +73,13 @@ void rr_scheduler_run(void) {
 }
 
 my_thread_t* rr_scheduler_pick() {
+    long now = get_current_time();
+
+    // Si el hilo actual es RR y aún tiene tiempo, sigue ejecutando
+    if (current_thread && current_thread->sched_type == SCHED_RR && now < current_thread->fin_ejecucion) {
+        return current_thread;
+    }
+
+    // Si el hilo actual terminó, no lo devolvemos
     return rr_dequeue();
 }

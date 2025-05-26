@@ -245,10 +245,12 @@ void animar_objeto_rotando(void *arg) {
 
         rotacion = (rotacion + cfg->rotar) % 360;
         x += dir_x;
-        if (x >= cfg->x_final || x <= cfg->x_inicial) dir_x *= 0;
+        if (x >= cfg->x_final && dir_x > 0) dir_x *= 0;
+        if (x <= cfg->x_final && dir_x < 0) dir_x *= 0;
 
         y += dir_y;
-        if (y >= cfg->y_final || y <= cfg->y_inicial) dir_y *= 0;
+        if (y >= cfg->y_final && dir_y > 0) dir_y *= 0;
+        if (y <= cfg->y_final && dir_y < 0) dir_y *= 0;
 
         my_thread_yield();
     }

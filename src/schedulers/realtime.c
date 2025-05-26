@@ -102,5 +102,15 @@ void realtime_scheduler_run(void) {
 }
 
 my_thread_t* realtime_scheduler_pick() {
+    long now = get_current_time();
+
+    // Si el hilo actual aún no ha terminado su deadline, déjalo continuar
+    if (current_thread &&
+        current_thread->sched_type == SCHED_REALTIME &&
+        now < current_thread->fin_ejecucion) {
+        return current_thread;
+    }
+
+    // Si ya terminó su tiempo, elegí el siguiente con EDF
     return dequeue_next_ready();
 }

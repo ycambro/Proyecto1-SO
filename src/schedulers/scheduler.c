@@ -56,27 +56,38 @@ my_thread_t* scheduler_pick_next(void) {
     if (next) return next;
 
     next = lottery_scheduler_pick();   // luego intenta con Lottery
-    if (next) return next;
+    if (next) return next;  // si hay un hilo Lottery listo, lo retorna
 
-    return rr_scheduler_pick();        // por último, con RR
+    return rr_scheduler_pick();  // finalmente intenta con Round Robin
 }
 
 void scheduler_yield(void) {
-    my_thread_t *prev = current_thread;
     long now = get_current_time();
 
     if (current_thread && current_thread->state == READY) {
-        if (now >= current_thread->fin_ejecucion && (current_thread->sched_type == SCHED_REALTIME)) {
-            scheduler_end(); // ya usó su tiempo
-        } else if (now >= current_thread->fin_ejecucion && (current_thread->sched_type == SCHED_RR || current_thread->sched_type == SCHED_LOTTERY) && current_thread->finalizado) {
-            // Aún le queda tiempo: puede seguir más adelante
-            scheduler_end();
-        } else {
-            // Aún le queda tiempo: puede seguir más adelante
-            scheduler_add(current_thread);
+        // Hilos de tiempo real terminan si su tiempo ya pasó
+        if (current_thread->sched_type == SCHED_REALTIME && now >= current_thread->fin_ejecucion) {
+            current_thread->state = FINISHED;  // Marcar como terminado
+            scheduler_end();  // Finaliza el hilo
+            return;
         }
+
+        // Hilos de RR o Lottery deben seguir ejecutándose hasta agotar su quantum
+        if ((current_thread->sched_type == SCHED_RR || current_thread->sched_type == SCHED_LOTTERY) && now < current_thread->fin_ejecucion) {
+            // Todavía le queda tiempo, lo seguimos ejecutando
+            return;
+        } else if ((current_thread->sched_type == SCHED_RR || current_thread->sched_type == SCHED_LOTTERY) && now >= current_thread->fin_ejecucion && current_thread->finalizado == 1) {
+            // Si ya acabó su quantum, lo reinsertamos a su scheduler
+            current_thread->state = FINISHED;  // Marcar como terminado
+            scheduler_end();  // Finaliza el hilo
+            return;
+        }
+
+        // Si ya acabó su quantum, lo reinsertamos a su scheduler
+        scheduler_add(current_thread);
     }
 
+    my_thread_t *prev = current_thread;
     my_thread_t *next = scheduler_pick_next();
     if (next) {
         current_thread = next;
@@ -84,13 +95,17 @@ void scheduler_yield(void) {
     }
 }
 
+
 void scheduler_end(void) {
     my_thread_t *next = scheduler_pick_next();
     if (next) {
         long now = get_current_time();
-        now = now - next->inicio_ejecucion;
-        next->inicio_ejecucion = next->inicio_ejecucion + now;
-        next->fin_ejecucion = next->fin_ejecucion + now;
+        next->inicio_ejecucion = now;
+        if (next->sched_type == SCHED_REALTIME) {
+            next->fin_ejecucion = next->fin_ejecucion + now;
+        } else {
+            next->fin_ejecucion = now + next->quantum;
+        }
 
         current_thread = next;
         setcontext(&next->context);
@@ -104,11 +119,6 @@ void scheduler_end(void) {
 void scheduler_run(void) {
     my_thread_t *next = scheduler_pick_next();
     if (next) {
-        if (next->sched_type == SCHED_RR || next->sched_type == SCHED_LOTTERY) {
-            long now = get_current_time();
-            next->inicio_ejecucion = now;
-            next->fin_ejecucion = next->inicio_ejecucion + next->quantum;
-        }
         current_thread = next;
         swapcontext(&main_context, &next->context);
     } else {

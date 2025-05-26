@@ -78,8 +78,8 @@ void lottery_scheduler_yield(void) {
 void lottery_scheduler_end(void) {
     my_thread_t *next = pick_winner();
     if (next) {
-        next->inicio_ejecucion = get_current_time() + next->inicio_ejecucion;
-        next->fin_ejecucion = get_current_time() + next->fin_ejecucion;
+        next->inicio_ejecucion = get_current_time();
+        next->fin_ejecucion = get_current_time() + next->quantum;
         current_thread = next;
         setcontext(&next->context);
     } else {
@@ -91,14 +91,23 @@ void lottery_scheduler_end(void) {
 void lottery_scheduler_run(void) {
     my_thread_t *next = pick_winner();
     if (next) {
-        next->inicio_ejecucion = get_current_time() + next->inicio_ejecucion;
-        next->fin_ejecucion = get_current_time() + next->fin_ejecucion;
+        next->inicio_ejecucion = get_current_time();
+        next->fin_ejecucion = get_current_time() + next->quantum;
         current_thread = next;
         swapcontext(&main_context, &next->context);  // ✅ guardar contexto de main
     } else {
         printf("[lottery] No hay hilos listos para ejecutar.\n");
     }
 }
+
 my_thread_t* lottery_scheduler_pick() {
+    long now = get_current_time();
+
+    // Si el actual aún no termina su quantum, continúa
+    if (current_thread && current_thread->sched_type == SCHED_LOTTERY && now < current_thread->fin_ejecucion) {
+        return current_thread;
+    }
+
+    // De lo contrario, elige un nuevo ganador
     return pick_winner();
 }
