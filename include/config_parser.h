@@ -22,6 +22,7 @@ typedef struct {
     int rotar;
     char *figura_ascii;
     int id;
+    int deadline; // Para SCHED_REALTIME
 } ObjetoConfig;
 
 typedef struct {

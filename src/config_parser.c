@@ -78,6 +78,7 @@ static int config_handler(void *user, const char *section, const char *name, con
         else if (strcmp(name, "tickets") == 0) obj->tickets = atoi(value);
         else if (strcmp(name, "rotar") == 0) obj->rotar = atoi(value);
         else if (strcmp(name, "prioridad") == 0) obj->prioridad = atoi(value);
+        else if (strcmp(name, "tickets") == 0) obj->tickets = atoi(value);
         else if (strcmp(name, "scheduler") == 0) {
             if (strcmp(value, "roundrobin") == 0) obj->scheduler = SCHED_RR;
             else if (strcmp(value, "lottery") == 0) obj->scheduler = SCHED_LOTTERY;

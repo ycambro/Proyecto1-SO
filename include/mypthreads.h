@@ -32,6 +32,12 @@ typedef struct my_thread {
     int deadline;          // Menor deadline = más urgente
     int inicio_ejecucion;    // Para seguimiento durante ejecución
     int fin_ejecucion;      // Tiempo estimado de finalización
+
+    // Para scheduler RR
+    int quantum;           // Tiempo de quantum para RR
+
+    // Finalizo animacion?
+    int finalizado;
 } my_thread_t;
 
 

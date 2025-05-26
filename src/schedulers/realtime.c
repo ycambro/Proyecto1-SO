@@ -12,7 +12,7 @@ extern ucontext_t main_context;
 static void enqueue_edf(my_thread_t *thread) {
     thread->next = NULL;
 
-    if (!realtime_queue || thread->priority < realtime_queue->priority) {
+    if (!realtime_queue || thread->deadline < realtime_queue->deadline) {
         thread->next = realtime_queue;
         realtime_queue = thread;
         return;
@@ -21,7 +21,7 @@ static void enqueue_edf(my_thread_t *thread) {
     my_thread_t *prev = NULL;
     my_thread_t *curr = realtime_queue;
 
-    while (curr && thread->priority >= curr->priority) {
+    while (curr && thread->deadline >= curr->deadline) {
         prev = curr;
         curr = curr->next;
     }

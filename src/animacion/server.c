@@ -228,10 +228,10 @@ void animar_objeto_rotando(void *arg) {
             enviar_figura_dividida(figura_original, y, x, cfg->id);
             a_mimir(500);
             limpiar_figura(figura_original, sizeof(figura_original));
-        } else if (current_thread -> fin_ejecucion < get_current_time() && cfg -> x_final == x) {
+        } else if (current_thread -> fin_ejecucion < get_current_time() && cfg -> x_final == x && cfg -> y_final == y && current_thread -> sched_type != SCHED_REALTIME) {
             limpiar_figura(figura_original, sizeof(figura_original));
+            current_thread -> finalizado = 1;
         }
-
         char figura_rotada[1000];
         rotar_figura(figura_original, figura_rotada, rotacion, sizeof(figura_rotada));
 
@@ -291,8 +291,8 @@ int main() {
     for (int i = 0; i < num_objetos; i++) {
         ObjetoConfig *cfg = &objetos[i];
         my_thread_t *hilo;
-        int param = (cfg->scheduler == SCHED_LOTTERY) ? cfg->tickets :
-                    (cfg->scheduler == SCHED_REALTIME) ? cfg->prioridad : 0;
+        int param = (cfg->scheduler == SCHED_LOTTERY) ? cfg->tickets : 1;
+                    (cfg->scheduler == SCHED_RR) ? cfg->prioridad : 0;
 
         my_thread_create(&hilo, animar_objeto_rotando, cfg, cfg->scheduler, param);
 

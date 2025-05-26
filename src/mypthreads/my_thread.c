@@ -13,6 +13,7 @@
 #define STACK_SIZE 64 * 1024
 
 extern ucontext_t main_context;
+extern QuantumConfig quantum_config[0]; // Configuración del quantum global
 
 static int thread_counter = 0;
 
@@ -34,6 +35,7 @@ int my_thread_create(my_thread_t **thread, void (*start_routine)(void *), void *
     (*thread)->context.uc_link = &main_context;
 
     makecontext(&(*thread)->context, (void (*)(void))start_routine, 1, arg);
+    ObjetoConfig *cfg = (ObjetoConfig *)arg;
 
     (*thread)->id = ++thread_counter;
     (*thread)->state = READY;
@@ -46,15 +48,20 @@ int my_thread_create(my_thread_t **thread, void (*start_routine)(void *), void *
     if (sched_type == SCHED_LOTTERY) 
     {
         (*thread)->lottery_tickets = param > 0 ? param : 1;
+        (*thread)->quantum = quantum_config; // Usar quantum global
     }
     else if (sched_type == SCHED_REALTIME) 
     {
-        (*thread)->priority = param;
-        (*thread)->deadline = 0; // No se usa en RR
+        (*thread)->deadline = cfg->inicio + cfg->fin;
     }
-    ObjetoConfig *cfg = (ObjetoConfig *)arg;
-    (*thread)->inicio_ejecucion = cfg->inicio + get_current_time();
-    (*thread)->fin_ejecucion = cfg->fin + get_current_time();
+    else if (sched_type == SCHED_RR) 
+    {
+        (*thread)->quantum = quantum_config; // Usar quantum global
+    }
+    if (sched_type != SCHED_RR) {
+        (*thread)->inicio_ejecucion = cfg->inicio + get_current_time();
+        (*thread)->fin_ejecucion = cfg->fin + get_current_time();
+    }
     scheduler_add(*thread);
     return 0;
 }
