@@ -64,7 +64,7 @@ my_thread_t* scheduler_pick_next(void) {
 void scheduler_yield(void) {
     long now = get_current_time();
 
-    if (current_thread && current_thread->state == READY) {
+    if (current_thread && current_thread->state == RUNNING) {
         // Hilos de tiempo real terminan si su tiempo ya pasó
         if (current_thread->sched_type == SCHED_REALTIME && now >= current_thread->fin_ejecucion) {
             current_thread->state = FINISHED;  // Marcar como terminado
@@ -81,6 +81,12 @@ void scheduler_yield(void) {
             current_thread->state = FINISHED;  // Marcar como terminado
             scheduler_end();  // Finaliza el hilo
             return;
+        } else if ((current_thread->sched_type == SCHED_RR || current_thread->sched_type == SCHED_LOTTERY) && now >= current_thread->fin_ejecucion && current_thread->finalizado != 1) {
+            // Si aún no ha finalizado, lo reinsertamos a su scheduler
+            current_thread->state = READY;  // Marcar como listo
+            scheduler_add(current_thread);  // Reinsertar en su scheduler
+            scheduler_end();  // Finaliza el hilo
+            return;
         }
 
         // Si ya acabó su quantum, lo reinsertamos a su scheduler
@@ -91,6 +97,7 @@ void scheduler_yield(void) {
     my_thread_t *next = scheduler_pick_next();
     if (next) {
         current_thread = next;
+        current_thread->state = RUNNING;  // Marcar como en ejecución
         swapcontext(&prev->context, &next->context);
     }
 }

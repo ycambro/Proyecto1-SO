@@ -315,6 +315,5 @@ int main() {
     if (sockfd >= 0) {
         close(sockfd);
     }
-    exit(1);
     return 0;
 }
