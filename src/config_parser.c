@@ -42,6 +42,8 @@ static int config_handler(void *user, const char *section, const char *name, con
 
         if (strcmp(name, "cols") == 0) mon->cols = atoi(value);
         else if (strcmp(name, "rows") == 0) mon->rows = atoi(value);
+        else if (strcmp(name, "col_offset") == 0) mon->col_offset = atoi(value);
+        else if (strcmp(name, "row_offset") == 0) mon->row_offset = atoi(value);
     }
 
     else if (strncmp(section, "quantum", 7) == 0) {

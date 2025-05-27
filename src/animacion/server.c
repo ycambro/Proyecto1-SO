@@ -28,6 +28,14 @@ int obtener_offset_monitor(int idx) {
     return offset;
 }
 
+int obtener_offset_monitor_filas(int idx) {
+    int offset = 0;
+    for (int i = 0; i < idx; i++) {
+        offset += monitores_config[i].rows;
+    }
+    return offset;
+}
+
 int ancho_total_escenario() {
     int total = 0;
     for (int i = 0; i < num_monitores; i++) {
@@ -36,21 +44,22 @@ int ancho_total_escenario() {
     return total;
 }
 
-void enviar_figura_dividida(const char *figura, int y, int x_inicio, int objetoId) {
+void enviar_figura_dividida(const char *figura, int y_inicio, int x_inicio, int objetoId) {
     for (int i = 0; i < total_monitores; i++) {
-        int offset = obtener_offset_monitor(i);
+        int x_offset = monitores_config[i].col_offset;
+        int y_offset = monitores_config[i].row_offset;
         int cols = monitores_config[i].cols;
-        int x_rel = x_inicio - offset;
+        int rows = monitores_config[i].rows;
 
-        // Si la figura no intersecta este monitor, continuar
-        if (x_rel >= cols || x_rel + strlen(figura) < 0) continue;
+        int x_rel = x_inicio - x_offset;
+        int y_rel = y_inicio - y_offset;
 
-        // Preparar figura recortada línea por línea
         char resultado[1500] = "";
         const char *ptr = figura;
         char linea[256];
+        int linea_y = 0;
 
-        while (*ptr) {
+        while (*ptr && linea_y < 100) {
             int len = 0;
             while (*ptr && *ptr != '\n' && len < 255) {
                 linea[len++] = *ptr++;
@@ -58,23 +67,30 @@ void enviar_figura_dividida(const char *figura, int y, int x_inicio, int objetoI
             linea[len] = '\0';
             if (*ptr == '\n') ptr++;
 
-            int start = (x_rel < 0) ? -x_rel : 0;
-            int max_copy = cols - ((x_rel < 0) ? 0 : x_rel);
-            if (max_copy <= 0) {
+            // Solo procesar si esta línea cae dentro del área vertical visible del monitor
+            if (y_rel + linea_y >= 0 && y_rel + linea_y < rows) {
+                int start = (x_rel < 0) ? -x_rel : 0;
+                int max_copy = cols - ((x_rel < 0) ? 0 : x_rel);
+
+                if (max_copy > 0) {
+                    char fragment[256] = "";
+                    strncpy(fragment, linea + start, max_copy);
+                    fragment[max_copy] = '\0';
+                    strcat(resultado, fragment);
+                }
                 strcat(resultado, "\n");
-                continue;
             }
 
-            char fragment[256] = "";
-            strncpy(fragment, linea + start, max_copy);
-            fragment[max_copy] = '\0';
-            strcat(resultado, fragment);
-            strcat(resultado, "\n");
+            linea_y++;
         }
 
-        char mensaje[1600];
-        snprintf(mensaje, sizeof(mensaje), "%s:%d:%d:%d\n", resultado, y, (x_rel < 0 ? 0 : x_rel), objetoId);
-        send(monitores[i], mensaje, strlen(mensaje), 0);
+        // Si hay algo que mostrar, enviarlo al monitor
+        if (strlen(resultado) > 0) {
+            char mensaje[1600];
+            snprintf(mensaje, sizeof(mensaje), "%s:%d:%d:%d\n", resultado,
+                     y_rel < 0 ? 0 : y_rel, x_rel < 0 ? 0 : x_rel, objetoId);
+            send(monitores[i], mensaje, strlen(mensaje), 0);
+        }
     }
 }
 

@@ -5,7 +5,7 @@ make clean           # elimina todos los binarios
 
 make run_server
 make build_monitor - esto solo compila el monitor
-./animar -c config.ini -m 192.168.1.28 -p 5000
+./animar -c config.ini -m 192.168.1.20 -p 5000
 ./animar -c config.ini -m 192.168.0.11 -p 5000
 
 

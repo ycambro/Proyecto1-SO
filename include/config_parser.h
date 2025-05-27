@@ -28,6 +28,8 @@ typedef struct {
 typedef struct {
     int cols;
     int rows;
+    int col_offset;
+    int row_offset;
 } MonitorConfig;
 
 typedef struct {
