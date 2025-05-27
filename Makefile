@@ -18,7 +18,7 @@ EXEC_test_realtime       = $(TEST_DIR)/test_realtime.c       $(PTHREADS_SRC) $(S
 SERVER_SRC = $(SRC_DIR)/animacion/server.c
 MONITOR_SRC = $(SRC_DIR)/animacion/monitor.c
 SERVER_BIN = server
-MONITOR_BIN = monitor
+MONITOR_BIN = animar
 
 # Compilador y flags
 CC = gcc
@@ -37,12 +37,6 @@ $(MONITOR_BIN): $(MONITOR_SRC)
 	@echo "🎥 Compilando monitor"
 	$(CC) -o $@ $^ -lncurses $(INCLUDE_DIR)
 
-ANIMAR_BIN = animar
-ANIMAR_SRC = src/animacion/animar.c $(PTHREADS_SRC) $(SCHED_SRC) $(INI_SRC)
-
-animar: $(ANIMAR_SRC)
-	@echo "🚀 Compilando animar (cliente)"
-	$(CC) -o $(ANIMAR_BIN) $^ -lncurses $(INCLUDE_DIR)
 
 # Compilar solo el monitor (sin ejecutarlo)
 build_monitor: $(MONITOR_BIN)

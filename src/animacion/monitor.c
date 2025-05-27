@@ -148,22 +148,32 @@ int run_client(const char* host, int port) {
     return 0;
 }
 
-// ✅ Ejecutable tradicional desde `make run_monitor`
 int main(int argc, char* argv[]) {
-    const char* host = "127.0.0.1";  // por defecto
+    const char* config_path = NULL;
+    const char* host = "127.0.0.1";
     int port = 5000;
 
     int opt;
-    while ((opt = getopt(argc, argv, "m:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "c:m:p:")) != -1) {
         switch (opt) {
+            case 'c': config_path = optarg; break;
             case 'm': host = optarg; break;
             case 'p': port = atoi(optarg); break;
             default:
-                fprintf(stderr, "Uso: %s [-m host] [-p puerto]\n", argv[0]);
+                fprintf(stderr, "Uso: %s -c config.ini -m host -p puerto\n", argv[0]);
                 return EXIT_FAILURE;
         }
     }
 
-    printf("[monitor] Conectando a %s:%d...\n", host, port);
+    if (!config_path || !host || port == 0) {
+        fprintf(stderr, "Faltan argumentos. Uso correcto:\n");
+        fprintf(stderr, "  %s -c config.ini -m host -p puerto\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    printf("[monitor] Conectando a %s:%d\n", host, port);
+    printf("[monitor] Usando configuración: %s\n", config_path);
+
+    // Podés pasar config_path a run_client más adelante si lo necesitás
     return run_client(host, port);
 }
