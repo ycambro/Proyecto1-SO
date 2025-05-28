@@ -15,6 +15,7 @@
 typedef struct {
     int id;
     char simbolo[1000];
+    char simbolo_prev[1000];
     int fila, fila_prev;
     int x, x_prev;
 } Objeto;
@@ -63,7 +64,7 @@ void actualizar_objeto(char *simbolo, int fila, int x, int id) {
 
 
 void dibujar_escenario() {
-    clear();
+    //clear();
     for (int i = 0; i < LINES; i++) {
         for (int j = 0; j < COLS; j++) {
             mvaddch(i, j, ' ');
@@ -73,17 +74,18 @@ void dibujar_escenario() {
 }
 
 void dibujar_objetos() {
-    dibujar_escenario();
+    //dibujar_escenario();
     for (int i = 0; i < total_objetos; i++) {
         int y = objetos[i].fila;
         int x = objetos[i].x;
         int y_prev = objetos[i].fila_prev;
         int x_prev = objetos[i].x_prev;
 
-        char figura[1000];
-        strcpy(figura, objetos[i].simbolo);
-        if (y_prev != y) {
-            char *lineaAnterior = strtok(figura, "\n");
+        if (objetos[i].simbolo_prev != NULL && objetos[i].simbolo_prev[0] != '\0') {
+            char figura_prev[1000];
+            strcpy(figura_prev, objetos[i].simbolo_prev);
+            // Borra la figura anterior
+            char *lineaAnterior = strtok(figura_prev, "\n");
             while (lineaAnterior) {
                 mvprintw(y_prev, x_prev, "%*s", strlen(lineaAnterior), " ");
                 lineaAnterior = strtok(NULL, "\n");
@@ -91,13 +93,15 @@ void dibujar_objetos() {
             }
         }
 
-        char *linea = strtok(objetos[i].simbolo, "\n");
+        strcpy(objetos[i].simbolo_prev, objetos[i].simbolo); // Guarda la figura actual como previa
+        char figura[1000];
+        strcpy(figura, objetos[i].simbolo);
+        char *linea = strtok(figura, "\n");
         while (linea) {
             mvprintw(y++, x, "%s", linea);
             if (y >= LINES) break;
             if (x >= COLS) break;
             linea = strtok(NULL, "\n");
-            y_prev++;
         }
     }
     refresh();

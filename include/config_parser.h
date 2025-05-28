@@ -21,6 +21,15 @@ typedef struct {
     int prioridad;
     int rotar;
     char *figura_ascii;
+
+    // Tamaño de la figura
+    int ancho;
+    int alto;
+
+    // Posición en el monitor
+    int x;
+    int y;
+
     int id;
     int deadline; // Para SCHED_REALTIME
 } ObjetoConfig;

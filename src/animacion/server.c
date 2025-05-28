@@ -20,6 +20,11 @@ int monitores[MAX_MONITORES];
 int total_monitores = 0;
 my_mutex_t monitores_mutex;
 
+struct lista_objetos {
+    ObjetoConfig objetos[MAX_OBJETOS];
+    int num_objetos;
+} lista_objetos;
+
 int obtener_offset_monitor(int idx) {
     int offset = 0;
     for (int i = 0; i < idx; i++) {
@@ -207,6 +212,20 @@ void a_mimir(int tiempo_ms) {
     }
 }
 
+void eliminar_objeto_por_id(int id) {
+    for (int i = 0; i < lista_objetos.num_objetos; i++) {
+        if (lista_objetos.objetos[i].id == id) {
+            // Mover todos los siguientes uno a la izquierda
+            for (int j = i; j < lista_objetos.num_objetos - 1; j++) {
+                lista_objetos.objetos[j] = lista_objetos.objetos[j + 1];
+            }
+            lista_objetos.num_objetos--;
+            break;
+        }
+    }
+}
+
+
 void animar_objeto_rotando(void *arg) {
     ObjetoConfig *cfg = (ObjetoConfig *)arg;
     int x = cfg->x_inicial;
@@ -236,6 +255,10 @@ void animar_objeto_rotando(void *arg) {
 
     printf("[animar_rotar] Animando con rotación de %d grados (fila %d, vel %d)\n", cfg->rotar, cfg->y_inicial, cfg->velocidad);
 
+    // Calcular ancho y alto de la figura original
+    calcular_figura(figura_original, sizeof(figura_original), &cfg->ancho, &cfg->alto);
+    printf("[animar_rotar] Figura original: %s (ancho: %d, alto: %d)\n", figura_original, cfg->ancho, cfg->alto);
+
     while (1) {
         a_mimir(500);
 
@@ -246,18 +269,86 @@ void animar_objeto_rotando(void *arg) {
             limpiar_figura(figura_original, sizeof(figura_original));
         } else if (current_thread -> fin_ejecucion < get_current_time() && cfg -> x_final == x && cfg -> y_final == y && current_thread -> sched_type != SCHED_REALTIME) {
             limpiar_figura(figura_original, sizeof(figura_original));
+            eliminar_objeto_por_id(cfg->id);
             current_thread -> finalizado = 1;
+        } else if (current_thread -> fin_ejecucion < get_current_time() && (cfg -> x_final != x || cfg -> y_final != y) && current_thread -> sched_type != SCHED_REALTIME) {
+            // Si el objeto no ha llegado a su destino, se guarda en la lista de objetos
+            int ya_existe = 0;
+            for (int i = 0; i < lista_objetos.num_objetos; i++) {
+                if (lista_objetos.objetos[i].id == cfg->id) {
+                    ya_existe = 1;
+                    break;
+                }
+            }
+
+            if (!ya_existe && lista_objetos.num_objetos < MAX_OBJETOS) {
+                lista_objetos.objetos[lista_objetos.num_objetos++] = *cfg;
+            }
+
+            if (ya_existe) {
+                // Actualizar la posición del objeto en la lista de objetos
+                for (int i = 0; i < lista_objetos.num_objetos; i++) {
+                    ObjetoConfig *otro = &lista_objetos.objetos[i];
+                    if (otro->id == cfg->id) {
+                        otro -> x = x;
+                        otro -> y = y;
+                    }
+                }
+            }
+
         }
+
+
         char figura_rotada[1000];
         rotar_figura(figura_original, figura_rotada, rotacion, sizeof(figura_rotada));
 
         char mensaje[1500];
+        int colision_x = 0;
+        int colision_y = 0;
+
+        for (int i = 0; i < lista_objetos.num_objetos; i++) {
+            ObjetoConfig *otro = &lista_objetos.objetos[i];
+            if (otro->id == cfg->id) continue; // Ignorar a sí mismo
+
+            // Verificar colisión en X
+            if (dir_x != 0) {
+                if ((x + cfg->ancho > otro->x) && (x < otro->x + otro->ancho) &&
+                    (y + cfg->alto > otro->y) && (y < otro->y + otro->alto)) {
+                    colision_x = 1;
+                }
+            }
+
+            // Verificar colisión en Y
+            if (dir_y != 0) {
+                if ((x + cfg->ancho > otro->x) && (x < otro->x + otro->ancho) &&
+                    (y + cfg->alto > otro->y) && (y < otro->y + otro->alto)) {
+                    colision_y = 1;
+                }
+            }
+        }
+
+        // Revertir solo las coordenadas con colisión
+        if (colision_x) {
+            x = cfg->x;
+        }
+        if (colision_y) {
+            y = cfg->y;
+        }
+
+        if (colision_x || colision_y) {
+            printf("[animar_rotar] Colisión detectada en (%d, %d), deteniendo movimiento de objeto %d\n", x, y, cfg->id);
+        }
+
+
         snprintf(mensaje, sizeof(mensaje), "%s:%d:%d\n", figura_rotada, y, x);
 
         // Enviar mensaje a todos los monitores
         my_mutex_lock(&monitores_mutex);
         enviar_figura_dividida(figura_rotada, y, x, cfg->id);
         my_mutex_unlock(&monitores_mutex);
+
+        cfg->x = x;
+        cfg->y = y;
 
         rotacion = (rotacion + cfg->rotar) % 360;
         x += dir_x;

@@ -10,5 +10,5 @@ make build_monitor - esto solo compila el monitor
 
 
 
-./monitor -m 192.168.100.110 -p 5000
+./animar -c config.ini -m 192.168.100.110 -p 5000
 192.168.100.110

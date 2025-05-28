@@ -114,3 +114,7 @@ my_thread_t* realtime_scheduler_pick() {
     // Si ya terminó su tiempo, elegí el siguiente con EDF
     return dequeue_next_ready();
 }
+
+my_thread_t* get_all_realtime_threads(void) {
+    return realtime_queue;
+}
