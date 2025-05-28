@@ -15,6 +15,9 @@
 extern ucontext_t main_context;
 extern QuantumConfig quantum_config[1]; // Configuración del quantum global
 
+int deadlines[100]; // Array para deadlines de hilos en SCHED_REALTIME
+int num_deadlines = 0;
+
 static int thread_counter = 0;
 
 uint64_t get_current_time() {
@@ -55,6 +58,17 @@ int my_thread_create(my_thread_t **thread, void (*start_routine)(void *), void *
         (*thread)->deadline = cfg->inicio + cfg->fin;
         (*thread)->inicio_ejecucion = cfg->inicio + get_current_time();
         (*thread)->fin_ejecucion = cfg->fin + get_current_time();
+        for (int i = 0; i < num_deadlines; i++) 
+        {
+            if (deadlines[i] == (*thread)->deadline) 
+            {
+                my_thread_chsched(*thread, SCHED_LOTTERY); // Si ya existe un hilo con ese deadline, cambiar a RR
+                (*thread)->quantum = quantum_config->quantum; // Usar quantum global
+                (*thread)->lottery_tickets = 7; // Asignar un número de tickets por defecto
+                break;
+            }
+        }
+        deadlines[num_deadlines++] = (*thread)->deadline; // Guardar deadline
     }
     else if (sched_type == SCHED_RR) 
     {

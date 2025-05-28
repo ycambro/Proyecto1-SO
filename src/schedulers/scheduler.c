@@ -109,7 +109,7 @@ void scheduler_end(void) {
         long now = get_current_time();
         next->inicio_ejecucion = now;
         if (next->sched_type == SCHED_REALTIME) {
-            next->fin_ejecucion = next->fin_ejecucion + now;
+            next->fin_ejecucion = next->inicio_ejecucion + next->deadline;
         } else {
             next->fin_ejecucion = now + next->quantum;
         }
