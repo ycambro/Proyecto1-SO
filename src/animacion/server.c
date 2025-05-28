@@ -257,7 +257,6 @@ void animar_objeto_rotando(void *arg) {
 
     // Calcular ancho y alto de la figura original
     calcular_figura(figura_original, sizeof(figura_original), &cfg->ancho, &cfg->alto);
-    printf("[animar_rotar] Figura original: %s (ancho: %d, alto: %d)\n", figura_original, cfg->ancho, cfg->alto);
 
     while (1) {
         a_mimir(500);
@@ -267,7 +266,7 @@ void animar_objeto_rotando(void *arg) {
             enviar_figura_dividida(figura_original, y, x, cfg->id);
             a_mimir(500);
             limpiar_figura(figura_original, sizeof(figura_original));
-        } else if (current_thread -> fin_ejecucion < get_current_time() && cfg -> x_final == x && cfg -> y_final == y && current_thread -> sched_type != SCHED_REALTIME) {
+        } else if (current_thread -> fin_ejecucion < get_current_time() && cfg -> x_final == x && cfg -> y_final == y) {
             limpiar_figura(figura_original, sizeof(figura_original));
             eliminar_objeto_por_id(cfg->id);
             current_thread -> finalizado = 1;
@@ -334,11 +333,6 @@ void animar_objeto_rotando(void *arg) {
         if (colision_y) {
             y = cfg->y;
         }
-
-        if (colision_x || colision_y) {
-            printf("[animar_rotar] Colisión detectada en (%d, %d), deteniendo movimiento de objeto %d\n", x, y, cfg->id);
-        }
-
 
         snprintf(mensaje, sizeof(mensaje), "%s:%d:%d\n", figura_rotada, y, x);
 
