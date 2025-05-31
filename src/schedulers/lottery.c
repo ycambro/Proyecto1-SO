@@ -5,7 +5,7 @@
 #include <ucontext.h>
 
 static my_thread_t *lottery_queue = NULL;
-extern ucontext_t main_context;  // ✅ Contexto global del main
+extern ucontext_t main_context;  // Contexto global del main
 
 // Encola un hilo en la cola de Lottery
 static void lottery_enqueue(my_thread_t *thread) {
@@ -96,7 +96,7 @@ void lottery_scheduler_end(void) {
         setcontext(&next->context);
     } else {
         printf("[lottery] No hay más hilos. Terminando ejecución.\n");
-        setcontext(&main_context); // ✅ volver a main() si no hay más
+        setcontext(&main_context); // volver a main() si no hay más
     }
 }
 
@@ -107,7 +107,7 @@ void lottery_scheduler_run(void) {
         next->inicio_ejecucion = get_current_time();
         next->fin_ejecucion = get_current_time() + next->quantum;
         current_thread = next;
-        swapcontext(&main_context, &next->context);  // ✅ guardar contexto de main
+        swapcontext(&main_context, &next->context);  // guardar contexto de main
     } else {
         printf("[lottery] No hay hilos listos para ejecutar.\n");
     }
