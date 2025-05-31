@@ -6,6 +6,8 @@
 extern ucontext_t main_context; // para regresar al main
 static my_thread_t *rr_queque = NULL;
 
+// Encola un hilo en la cola de Round Robin
+// y lo prepara para su ejecución
 static void rr_enqueue(my_thread_t *thread) {
     thread->next = NULL;
     if (!rr_queque) {
@@ -17,6 +19,8 @@ static void rr_enqueue(my_thread_t *thread) {
     }
 }
 
+// Desencola el siguiente hilo listo para ejecutar en Round Robin
+// y lo retorna. Si no hay hilos listos, retorna NULL.
 static my_thread_t *rr_dequeue(void) {
     if (!rr_queque) return NULL;
     my_thread_t *t = rr_queque;
@@ -24,14 +28,19 @@ static my_thread_t *rr_dequeue(void) {
     return t;
 }
 
+// Inicializa el scheduler de Round Robin
 void rr_scheduler_init(void) {
     rr_queque = NULL;
 }
 
+// Agrega un hilo al scheduler de Round Robin
 void rr_scheduler_add(my_thread_t *thread) {
     rr_enqueue(thread);
 }
 
+// Realiza un yield del scheduler de Round Robin
+// Si el hilo actual ha agotado su quantum, lo finaliza
+// y elige el siguiente hilo a ejecutar
 void rr_scheduler_yield(void) {
     long now = get_current_time();
     if (now >= current_thread->fin_ejecucion) {
@@ -47,6 +56,8 @@ void rr_scheduler_yield(void) {
     }
 }
 
+// Finaliza el scheduler de Round Robin y elige el siguiente hilo a ejecutar
+// Si no hay más hilos, vuelve al contexto de main
 void rr_scheduler_end(void) {
     my_thread_t *next = rr_dequeue();
     if (next) {
@@ -60,6 +71,7 @@ void rr_scheduler_end(void) {
     }
 }
 
+// Ejecuta el scheduler de Round Robin, eligiendo el siguiente hilo a ejecutar
 void rr_scheduler_run(void) {
     my_thread_t *next = rr_dequeue();
     if (next) {
@@ -72,6 +84,8 @@ void rr_scheduler_run(void) {
     }
 }
 
+// Elige el siguiente hilo a ejecutar en Round Robin
+// Si el hilo actual es RR y aún tiene tiempo, lo devuelve
 my_thread_t* rr_scheduler_pick() {
     long now = get_current_time();
 

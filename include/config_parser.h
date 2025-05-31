@@ -10,15 +10,23 @@
 typedef struct {
     char simbolo;
     int velocidad;
+
+    // Para realtime
     int inicio;
     int fin;
+
+    // Posición inicial y final del objeto
     int x_inicial;
     int x_final;
     int y_inicial;
     int y_final;
+
+    // Scheduler
     scheduler_t scheduler;
     int tickets;
     int prioridad;
+
+    // Configuración de la figura ASCII
     int rotar;
     char *figura_ascii;
 
@@ -34,6 +42,7 @@ typedef struct {
     int deadline; // Para SCHED_REALTIME
 } ObjetoConfig;
 
+// Configuración de los monitores
 typedef struct {
     int cols;
     int rows;
@@ -41,6 +50,7 @@ typedef struct {
     int row_offset;
 } MonitorConfig;
 
+// Configuración del quantum para SCHED_RR y SCHED_LOTTERY
 typedef struct {
     int quantum;
 } QuantumConfig;

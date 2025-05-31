@@ -3,12 +3,14 @@
 
 #include <ucontext.h>
 
+// Tipos de Sheduler
 typedef enum {
     SCHED_RR,
     SCHED_LOTTERY,
     SCHED_REALTIME
 } scheduler_t;
 
+// Estados de los hilos
 typedef enum {
     READY,
     RUNNING,
@@ -33,11 +35,11 @@ typedef struct my_thread {
     int inicio_ejecucion;    // Para seguimiento durante ejecución
     int fin_ejecucion;      // Tiempo estimado de finalización
 
-    // Para scheduler RR
+    // Para scheduler RR y LOTTERY
     int quantum;           // Tiempo de quantum para RR
 
     // Finalizo animacion?
-    int finalizado;
+    int finished;
 } my_thread_t;
 
 

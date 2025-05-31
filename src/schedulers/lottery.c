@@ -7,6 +7,7 @@
 static my_thread_t *lottery_queue = NULL;
 extern ucontext_t main_context;  // ✅ Contexto global del main
 
+// Encola un hilo en la cola de Lottery
 static void lottery_enqueue(my_thread_t *thread) {
     thread->next = NULL;
     if (!lottery_queue) {
@@ -18,6 +19,9 @@ static void lottery_enqueue(my_thread_t *thread) {
     }
 }
 
+// Escoje un hilo ganador de la cola de Lottery para ejecutarlo,
+// basándose en la cantidad de tickets que tiene cada hilo
+// y lo elimina de la cola
 static my_thread_t *pick_winner(void) {
     int total_tickets = 0;
     for (my_thread_t *t = lottery_queue; t; t = t->next) {
@@ -27,12 +31,14 @@ static my_thread_t *pick_winner(void) {
 
     if (total_tickets == 0) return NULL;
 
-    int winning_ticket = (rand() % total_tickets) + 1;
+    int winning_ticket = (rand() % total_tickets) + 1; // Elegir un ticket ganador aleatorio
     int count = 0;
 
     my_thread_t *prev = NULL;
     my_thread_t *curr = lottery_queue;
 
+    // Recorre la cola de Lottery y encuentra al ganador
+    // basado en el número de tickets
     while (curr) {
         if (curr->state == READY) {
             count += curr->lottery_tickets;
@@ -50,15 +56,19 @@ static my_thread_t *pick_winner(void) {
     return NULL;
 }
 
+// Inicializa el scheduler de Lottery
 void lottery_scheduler_init(void) {
     lottery_queue = NULL;
     srand(time(NULL)); // Inicializar generador aleatorio
 }
 
+// Agrega un hilo a la cola de Lottery
+// y lo prepara para su ejecución
 void lottery_scheduler_add(my_thread_t *thread) {
     lottery_enqueue(thread);
 }
 
+// Finaliza el hilo actual y lo elimina de la cola de Lottery
 void lottery_scheduler_yield(void) {
     long now = get_current_time();
 
@@ -75,6 +85,8 @@ void lottery_scheduler_yield(void) {
     }
 }
 
+// Finaliza el scheduler de Lottery y elige el siguiente hilo a ejecutar
+// Si no hay más hilos, vuelve al contexto de main
 void lottery_scheduler_end(void) {
     my_thread_t *next = pick_winner();
     if (next) {
@@ -88,6 +100,7 @@ void lottery_scheduler_end(void) {
     }
 }
 
+// Ejecuta el scheduler de Lottery, eligiendo el siguiente hilo a ejecutar
 void lottery_scheduler_run(void) {
     my_thread_t *next = pick_winner();
     if (next) {
@@ -100,6 +113,7 @@ void lottery_scheduler_run(void) {
     }
 }
 
+// Elige el hilo a ejecutar en el scheduler de Lottery
 my_thread_t* lottery_scheduler_pick() {
     long now = get_current_time();
 

@@ -12,6 +12,7 @@
 #define PORT 5000
 #define MAX_LINE 1500
 
+// Estructura para almacenar la visualización de un objeto
 typedef struct {
     int id;
     char simbolo[1000];
@@ -24,12 +25,15 @@ typedef struct {
 Objeto objetos[MAX_OBJETOS];
 int total_objetos = 0;
 
+// Función para obtener el tiempo actual en milisegundos
 uint64_t get_current_time() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return (uint64_t)(tv.tv_sec) * 1000 + (uint64_t)(tv.tv_usec) / 1000;
 }
 
+// Función para simular una espera
+// de un tiempo específico en milisegundos
 void a_mimir(int tiempo_ms) {
     long ahora = get_current_time();
     while (1) {
@@ -39,6 +43,8 @@ void a_mimir(int tiempo_ms) {
     }
 }
 
+// Actualiza o agrega un objeto en la lista de objetos
+// Si el objeto ya existe, actualiza su posición y símbolo
 void actualizar_objeto(char *simbolo, int fila, int x, int id) {
     for (int i = 0; i < total_objetos; i++) {
         if (id == objetos[i].id) {
@@ -63,6 +69,7 @@ void actualizar_objeto(char *simbolo, int fila, int x, int id) {
 }
 
 
+// Limpia y dibuja el escenario
 void dibujar_escenario() {
     //clear();
     for (int i = 0; i < LINES; i++) {
@@ -73,6 +80,8 @@ void dibujar_escenario() {
     refresh();
 }
 
+// Dibuja los objetos en el escenario
+// Borra la figura previa y dibuja la nueva figura
 void dibujar_objetos() {
     //dibujar_escenario();
     for (int i = 0; i < total_objetos; i++) {
@@ -81,6 +90,7 @@ void dibujar_objetos() {
         int y_prev = objetos[i].fila_prev;
         int x_prev = objetos[i].x_prev;
 
+        // Si hay figura previa, la borra
         if (objetos[i].simbolo_prev != NULL && objetos[i].simbolo_prev[0] != '\0') {
             char figura_prev[1000];
             strcpy(figura_prev, objetos[i].simbolo_prev);
@@ -93,6 +103,7 @@ void dibujar_objetos() {
             }
         }
 
+        // Dibuja la figura actual
         strcpy(objetos[i].simbolo_prev, objetos[i].simbolo); // Guarda la figura actual como previa
         char figura[1000];
         strcpy(figura, objetos[i].simbolo);
@@ -107,31 +118,37 @@ void dibujar_objetos() {
     refresh();
 }
 
-// ✅ Función reutilizable para monitor desde animar
+// Función principal del cliente
+// Conecta al servidor y recibe actualizaciones de objetos
 int run_client(const char* host, int port) {
     int sockfd;
     struct sockaddr_in serv_addr;
     char buffer[MAX_LINE];
 
+    // Crear socket y conectar al servidor
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         perror("socket");
         exit(1);
     }
 
+    // Configurar la dirección del servidor
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);
     inet_pton(AF_INET, host, &serv_addr.sin_addr);
 
+    // Conectar al servidor
     if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
         perror("connect");
         exit(1);
     }
 
+    // Inicializar ncurses
     initscr();
     noecho();
     curs_set(FALSE);
 
+    // Ciclo para recibir datos del servidor y actualizar la pantalla
     while (1) {
         int n = recv(sockfd, buffer, MAX_LINE - 1, 0);
         if (n <= 0) break;
@@ -152,6 +169,8 @@ int run_client(const char* host, int port) {
     return 0;
 }
 
+// Función principal del monitor
+// Procesa los argumentos de línea de comandos
 int main(int argc, char* argv[]) {
     const char* config_path = NULL;
     const char* host = "127.0.0.1";
@@ -178,6 +197,5 @@ int main(int argc, char* argv[]) {
     printf("[monitor] Conectando a %s:%d\n", host, port);
     printf("[monitor] Usando configuración: %s\n", config_path);
 
-    // Podés pasar config_path a run_client más adelante si lo necesitás
     return run_client(host, port);
 }

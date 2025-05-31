@@ -9,15 +9,18 @@
 static my_thread_t *realtime_queue = NULL;
 extern ucontext_t main_context;
 
+// Encola un hilo en la cola de EDF para el scheduler de tiempo real
 static void enqueue_edf(my_thread_t *thread) {
     thread->next = NULL;
 
+    // Si la cola está vacía o el nuevo hilo tiene un deadline menor que el primero, lo insertamos al inicio
     if (!realtime_queue || thread->deadline < realtime_queue->deadline) {
         thread->next = realtime_queue;
         realtime_queue = thread;
         return;
     }
 
+    // Si no, recorremos la cola para encontrar la posición correcta
     my_thread_t *prev = NULL;
     my_thread_t *curr = realtime_queue;
 
@@ -30,6 +33,8 @@ static void enqueue_edf(my_thread_t *thread) {
     thread->next = curr;
 }
 
+// Desencola el siguiente hilo listo para ejecutar según EDF
+// y lo retorna. Si no hay hilos listos, retorna NULL.
 static my_thread_t *dequeue_next_ready(void) {
     my_thread_t *prev = NULL;
     my_thread_t *curr = realtime_queue;
@@ -48,14 +53,18 @@ static my_thread_t *dequeue_next_ready(void) {
     return NULL;
 }
 
+// Inicializa el scheduler de tiempo real
 void realtime_scheduler_init(void) {
     realtime_queue = NULL;
 }
 
+// Agrega un hilo al scheduler de tiempo real
 void realtime_scheduler_add(my_thread_t *thread) {
     enqueue_edf(thread);
 }
 
+// Realiza un yield del scheduler de tiempo real
+// Si el hilo actual ha agotado su tiempo, lo finaliza y elige el siguiente
 void realtime_scheduler_yield(void) {
     long now = get_current_time();
     if (current_thread && current_thread->state == READY) {
@@ -76,6 +85,8 @@ void realtime_scheduler_yield(void) {
     }
 }
 
+// Finaliza el scheduler de tiempo real y elige el siguiente hilo a ejecutar
+// Si no hay más hilos, vuelve al contexto de main
 void realtime_scheduler_end(void) {
     my_thread_t *next = dequeue_next_ready();
     if (next) {
@@ -89,6 +100,7 @@ void realtime_scheduler_end(void) {
     }
 }
 
+// Ejecuta el scheduler de tiempo real, eligiendo el siguiente hilo a ejecutar
 void realtime_scheduler_run(void) {
     my_thread_t *next = dequeue_next_ready();
     if (next) {
@@ -101,6 +113,8 @@ void realtime_scheduler_run(void) {
     }
 }
 
+// Elige el siguiente hilo a ejecutar según EDF
+// Si el hilo actual aún no ha terminado su deadline, lo deja continuar
 my_thread_t* realtime_scheduler_pick() {
     long now = get_current_time();
 

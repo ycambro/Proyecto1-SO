@@ -8,12 +8,14 @@
 
 my_thread_t *current_thread = NULL;
 
+// Inicializa todos los schedulers
 void scheduler_init(void) {
     realtime_scheduler_init();
     lottery_scheduler_init();
     rr_scheduler_init();
 }
 
+// Agrega un hilo al scheduler correspondiente según su tipo
 void scheduler_add(my_thread_t *t) {
     switch (t->sched_type) {
         case SCHED_REALTIME:
@@ -25,30 +27,7 @@ void scheduler_add(my_thread_t *t) {
     }
 }
 
-/*
-my_thread_t* scheduler_pick_next(void) {
-    static int turno = 0;  // 0: RT, 1: Lottery, 2: RR
-
-    for (int i = 0; i < 3; i++) {
-        my_thread_t *next = NULL;
-        int actual = (turno + i) % 3;
-
-        switch (actual) {
-            case 0: next = realtime_scheduler_pick(); break;
-            case 1: next = lottery_scheduler_pick(); break;
-            case 2: next = rr_scheduler_pick(); break;
-        }
-
-        if (next) {
-            turno = (actual + 1) % 3; // siguiente turno
-            return next;
-        }
-    }
-
-    return NULL; // ninguna cola tiene hilos
-}
-*/
-
+// Elige el siguiente hilo a ejecutar según las políticas de scheduling
 my_thread_t* scheduler_pick_next(void) {
     my_thread_t *next;
 
@@ -61,6 +40,7 @@ my_thread_t* scheduler_pick_next(void) {
     return rr_scheduler_pick();  // finalmente intenta con Round Robin
 }
 
+// 
 void scheduler_yield(void) {
     long now = get_current_time();
 
@@ -76,12 +56,12 @@ void scheduler_yield(void) {
         if ((current_thread->sched_type == SCHED_RR || current_thread->sched_type == SCHED_LOTTERY) && now < current_thread->fin_ejecucion) {
             // Todavía le queda tiempo, lo seguimos ejecutando
             return;
-        } else if ((current_thread->sched_type == SCHED_RR || current_thread->sched_type == SCHED_LOTTERY) && now >= current_thread->fin_ejecucion && current_thread->finalizado == 1) {
-            // Si ya acabó su quantum, lo reinsertamos a su scheduler
-            current_thread->state = FINISHED;  // Marcar como terminado
+        } else if ((current_thread->sched_type == SCHED_RR || current_thread->sched_type == SCHED_LOTTERY) && now >= current_thread->fin_ejecucion && current_thread->finished == 1) {
+            // Si ya acabó su quantum y finalizó su ejecución, lo marcamos como terminado
+            current_thread->state = FINISHED;
             scheduler_end();  // Finaliza el hilo
             return;
-        } else if ((current_thread->sched_type == SCHED_RR || current_thread->sched_type == SCHED_LOTTERY) && now >= current_thread->fin_ejecucion && current_thread->finalizado != 1) {
+        } else if ((current_thread->sched_type == SCHED_RR || current_thread->sched_type == SCHED_LOTTERY) && now >= current_thread->fin_ejecucion && current_thread->finished != 1) {
             // Si aún no ha finalizado, lo reinsertamos a su scheduler
             current_thread->state = READY;  // Marcar como listo
             scheduler_add(current_thread);  // Reinsertar en su scheduler
@@ -89,10 +69,11 @@ void scheduler_yield(void) {
             return;
         }
 
-        // Si ya acabó su quantum, lo reinsertamos a su scheduler
+        // Si no subió a ninguna condición anterior, lo reinsertamos denuevo para otra iteración
         scheduler_add(current_thread);
     }
 
+    // Elegir el siguiente hilo a ejecutar
     my_thread_t *prev = current_thread;
     my_thread_t *next = scheduler_pick_next();
     if (next) {
@@ -102,10 +83,11 @@ void scheduler_yield(void) {
     }
 }
 
-
+// Finaliza el scheduler actual y elige el siguiente hilo a ejecutar
 void scheduler_end(void) {
     my_thread_t *next = scheduler_pick_next();
     if (next) {
+        // Actualizar tiempos de ejecución del hilo seleccionado
         long now = get_current_time();
         next->inicio_ejecucion = now;
         if (next->sched_type == SCHED_REALTIME) {
@@ -114,6 +96,7 @@ void scheduler_end(void) {
             next->fin_ejecucion = now + next->quantum;
         }
 
+        // Ejecutar el siguiente hilo
         current_thread = next;
         setcontext(&next->context);
     } else {
@@ -122,7 +105,7 @@ void scheduler_end(void) {
     }
 }
 
-
+// Ejecuta el scheduler, eligiendo el siguiente hilo a ejecutar
 void scheduler_run(void) {
     my_thread_t *next = scheduler_pick_next();
     if (next) {

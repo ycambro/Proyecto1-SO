@@ -12,6 +12,7 @@ int num_monitores = 0;
 QuantumConfig quantum_config[1];
 int quantum = 0;
 
+// Lee un archivo de figura ASCII y lo carga en un buffer dinámico
 char *leer_figura_ascii(const char *ruta) {
     FILE *f = fopen(ruta, "r");
     if (!f) return NULL;
@@ -28,24 +29,30 @@ char *leer_figura_ascii(const char *ruta) {
     return buffer;
 }
 
+// Handler para procesar las secciones y claves del archivo de configuración
 static int config_handler(void *user, const char *section, const char *name, const char *value) {
     static ObjetoConfig *obj = NULL;
     static MonitorConfig *mon = NULL;
     static QuantumConfig *quantum = NULL;
 
     // Si sección empieza con "monitor"
+    // y no hay monitor actual, inicializa uno nuevo
+    // o si el nombre es "cols", reinicia el monitor
     if (strncmp(section, "monitor", 7) == 0) {
         if (mon == NULL || strcmp(name, "cols") == 0) {
             if (num_monitores >= MAX_MONITORES) return 0;
             mon = &monitores_config[num_monitores++];
         }        
 
+        // Le asigna valores al monitor
         if (strcmp(name, "cols") == 0) mon->cols = atoi(value);
         else if (strcmp(name, "rows") == 0) mon->rows = atoi(value);
         else if (strcmp(name, "col_offset") == 0) mon->col_offset = atoi(value);
         else if (strcmp(name, "row_offset") == 0) mon->row_offset = atoi(value);
     }
 
+    // Si sección empieza con "quantum"
+    // Asigna el valor del quantum
     else if (strncmp(section, "quantum", 7) == 0) {
         if (quantum == NULL) {
             quantum = &quantum_config[0];
@@ -56,6 +63,8 @@ static int config_handler(void *user, const char *section, const char *name, con
     }
 
     // Si sección empieza con "objeto"
+    // Crea un nuevo objeto
+    // Asigna valores al objeto
     else if (strncmp(section, "objeto", 6) == 0) {
         if (strcmp(name, "simbolo") == 0) {
             if (num_objetos >= MAX_OBJETOS) return 0;
@@ -91,6 +100,7 @@ static int config_handler(void *user, const char *section, const char *name, con
     return 1;
 }
 
+// Carga la configuración desde un archivo INI
 int cargar_config(const char *ruta) {
     num_objetos = 0;
     num_monitores = 0;
