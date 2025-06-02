@@ -17,7 +17,6 @@ static void enqueue_edf(my_thread_t *thread) {
     if (!realtime_queue || thread->deadline < realtime_queue->deadline) {
         thread->next = realtime_queue;
         realtime_queue = thread;
-        printf("[realtime] Encolando hilo %d con deadline %d\n", thread->id, thread->deadline);
         return;
     }
 
@@ -26,6 +25,10 @@ static void enqueue_edf(my_thread_t *thread) {
     my_thread_t *curr = realtime_queue;
 
     while (curr && thread->deadline >= curr->deadline) {
+        if (thread == curr) {
+            // Si el hilo ya estaba en la cola, no lo agregamos de nuevo
+            return;
+        }
         prev = curr;
         curr = curr->next;
     }
@@ -115,6 +118,15 @@ void realtime_scheduler_run(void) {
     }
 }
 
+void imprimir_realtime_queue(void) {
+    my_thread_t *curr = realtime_queue;
+    printf("[realtime] Hilos en la cola:\n");
+    while (curr) {
+        printf("  Hilo %d: deadline %d, estado %d\n", curr->id, curr->deadline, curr->state);
+        curr = curr->next;
+    }
+}
+
 // Elige el siguiente hilo a ejecutar según EDF
 // Si el hilo actual aún no ha terminado su deadline, lo deja continuar
 my_thread_t* realtime_scheduler_pick() {
@@ -126,7 +138,6 @@ my_thread_t* realtime_scheduler_pick() {
         now < current_thread->fin_ejecucion) {
         return current_thread;
     }
-
     // Si ya terminó su tiempo, elegí el siguiente con EDF
     return dequeue_next_ready();
 }

@@ -68,9 +68,9 @@ void scheduler_yield(void) {
             scheduler_end();  // Finaliza el hilo
             return;
         }
-
+        return;
         // Si no subió a ninguna condición anterior, lo reinsertamos denuevo para otra iteración
-        scheduler_add(current_thread);
+        //scheduler_add(current_thread);
     }
 
     // Elegir el siguiente hilo a ejecutar
