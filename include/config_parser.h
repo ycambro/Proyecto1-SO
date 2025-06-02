@@ -5,7 +5,7 @@
 
 #define MAX_MONITORES 10
 
-#define MAX_OBJETOS 10
+#define MAX_OBJETOS 100
 
 typedef struct {
     char simbolo;

@@ -318,7 +318,7 @@ void animar_objeto_rotando(void *arg) {
     char figura_original[1000];
     strncpy(figura_original, cfg->figura_ascii, sizeof(figura_original));
 
-    printf("[animar_rotar] Animando con rotación de %d grados (fila %d, vel %d)\n", cfg->rotar, cfg->y_inicial, cfg->velocidad);
+    printf("[animar_rotar] Animando con rotación de %d grados (id %d)\n", cfg->rotar, cfg->id);
 
     // Calcular ancho y alto de la figura original
     calcular_figura(figura_original, sizeof(figura_original), &cfg->ancho, &cfg->alto);
@@ -481,7 +481,7 @@ int main() {
 
         my_thread_create(&hilo, animar_objeto_rotando, cfg, cfg->scheduler, param);
 
-        printf("[server] Hilo creado para %c con scheduler %d, param %d\n", cfg->simbolo, cfg->scheduler, param);
+        printf("[server] Hilo creado para %d con scheduler %d, param %d\n", cfg->id, cfg->scheduler, param);
     }
 
     // Ejecutar el scheduler
