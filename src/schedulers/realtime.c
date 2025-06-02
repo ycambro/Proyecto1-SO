@@ -17,6 +17,7 @@ static void enqueue_edf(my_thread_t *thread) {
     if (!realtime_queue || thread->deadline < realtime_queue->deadline) {
         thread->next = realtime_queue;
         realtime_queue = thread;
+        printf("[realtime] Encolando hilo %d con deadline %d\n", thread->id, thread->deadline);
         return;
     }
 
@@ -29,6 +30,7 @@ static void enqueue_edf(my_thread_t *thread) {
         curr = curr->next;
     }
 
+    //printf("[realtime] Encolando hilo %d con deadline %d\n", thread->id, thread->deadline);
     prev->next = thread;
     thread->next = curr;
 }
@@ -90,8 +92,8 @@ void realtime_scheduler_yield(void) {
 void realtime_scheduler_end(void) {
     my_thread_t *next = dequeue_next_ready();
     if (next) {
-        next->inicio_ejecucion = get_current_time() + next->inicio_ejecucion;
-        next->fin_ejecucion = get_current_time() + next->fin_ejecucion;
+        next->inicio_ejecucion = get_current_time();
+        next->fin_ejecucion = next->inicio_ejecucion + next->deadline;
         current_thread = next;
         setcontext(&next->context);
     } else {

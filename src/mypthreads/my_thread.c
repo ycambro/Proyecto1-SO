@@ -40,7 +40,12 @@ int my_thread_create(my_thread_t **thread, void (*start_routine)(void *), void *
     (*thread)->context.uc_link = &main_context;
 
     makecontext(&(*thread)->context, (void (*)(void))start_routine, 1, arg);    // Preparar el contexto del hilo para ejecutar la función start_routine
-    ObjetoConfig *cfg = (ObjetoConfig *)arg;                                    // Convertir el argumento a ObjetoConfig
+    ObjetoConfig *cfg = (ObjetoConfig *)arg;   
+    
+    if (quantum_config -> quantum == 0) {
+        printf("[mypthreads] Error: quantum_config no está inicializado.\n");
+        quantum_config[0].quantum = 5000;
+    }
 
     // Configurar el hilo según el tipo de scheduler
     (*thread)->id = ++thread_counter;
@@ -61,6 +66,16 @@ int my_thread_create(my_thread_t **thread, void (*start_routine)(void *), void *
     // y verificar si ya existe un hilo con ese deadline
     else if (sched_type == SCHED_REALTIME) 
     {
+        if (cfg -> fin <= cfg -> inicio) 
+        {
+            fprintf(stderr, "[mypthreads] Error: el tiempo de fin debe ser mayor que el tiempo de inicio.\n");
+            free(*thread);
+            exit(EXIT_FAILURE);
+        }
+
+        (*thread)->priority = cfg->prioridad; // Asignar prioridad del objeto
+        (*thread)->lottery_tickets = 0; // No aplica para SCHED_REALTIME
+        (*thread)->finished = 0; // Inicialmente no ha finalizado la animación
         (*thread)->deadline = cfg->inicio + cfg->fin;
         (*thread)->inicio_ejecucion = cfg->inicio + get_current_time();
         (*thread)->fin_ejecucion = cfg->fin + get_current_time();

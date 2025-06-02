@@ -477,7 +477,6 @@ int main() {
         ObjetoConfig *cfg = &objetos[i];
         my_thread_t *hilo;
         int param = (cfg->scheduler == SCHED_LOTTERY) ? cfg->tickets : 1;
-                    (cfg->scheduler == SCHED_RR) ? cfg->prioridad : 0;
 
         my_thread_create(&hilo, animar_objeto_rotando, cfg, cfg->scheduler, param);
 
